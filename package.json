@@ -1,0 +1,44 @@
+{
+	"name": "kmk-node-pagseguro",
+	"version": "0.0.1",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"build": "tsc -p ./",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/neokamikai/kmk-node-pagseguro.git"
+	},
+	"keywords": [
+		"pagseguro",
+		"checkout",
+		"recorrente",
+		"recurring",
+		"api",
+		"uol",
+		"automatic",
+		"billing",
+		"cobrança",
+		"cobranca"
+	],
+	"author": "neokamikai",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/neokamikai/kmk-node-pagseguro/issues"
+	},
+	"homepage": "https://github.com/neokamikai/kmk-node-pagseguro#readme",
+	"dependencies": {
+		"@types/node": "^12.6.8",
+		"@types/xml2json": "^0.10.0",
+		"querystring": "^0.2.0",
+		"request": "^2.88.0",
+		"types": "^0.1.1",
+		"xml2json": "^0.11.2"
+	},
+	"devDependencies": {
+		"nodemon": "^1.19.2",
+		"typescript": "^3.5.3"
+	}
+}
