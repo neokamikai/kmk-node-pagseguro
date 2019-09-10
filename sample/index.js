@@ -1,8 +1,8 @@
 const {PagSeguro} = require('../')
 let client = new PagSeguro.Client({
-	appId: 'app0242712020', appKey: '8165020DE9E9335004C83FB8C3AD3C04', environment: 'sandbox',
-	email: 'kamikai@gmail.com', token: 'AA4191337B7449288EF89A708A31A4C4'
-	
+	appId: 'app9999999999', appKey: '8165021DE9E9335004C84FB8C3AD3C04', environment: 'sandbox',
+	email: 'your@email.com', token: 'AA7191337B7559288EF80A708A31A4C4'
+
 });
 
 let stdin = process.openStdin();
@@ -20,6 +20,13 @@ stdin.on('data', e => {
 						id: '1',
 						amount: 10,
 						description: 'Produto teste',
+						quantity: 1,
+						weight: 1
+					},
+					{
+						id: '2',
+						amount: 10,
+						description: 'Produto teste 2',
 						quantity: 1,
 						weight: 1
 					}
@@ -59,7 +66,7 @@ stdin.on('data', e => {
 				maxUses: 999,
 				extraAmount: '0.00',
 				reference: 'TESTE'
-			}, (err, resp) => { 
+			}, (err, resp) => {
 					if (err) {
 						console.log('Error:', err);
 					}
@@ -67,7 +74,7 @@ stdin.on('data', e => {
 						console.log('Success!', resp);
 					}
 			});
-		}
+		}break;
 		default:
 			console.log('unknown command:',cmd);
 	}

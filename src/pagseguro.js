@@ -444,64 +444,60 @@ var PagSeguro;
                 });
             });
         };
-        Client.prototype.criarTransacao = function (checkout, cb, mode) {
+        Client.prototype.criarTransacao = function (checkout, callback, mode) {
             if (mode === void 0) { mode = 'redirect'; }
             return __awaiter(this, void 0, void 0, function () {
-                var url, i, body, response;
+                var url, i, body;
                 var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoAvulso.criarTransacao.url, {});
-                            if (!checkout)
-                                throw new Error('missing argument: checkout');
-                            if (!checkout.sender)
-                                throw new Error('missing property: sender');
-                            if (!checkout.items)
-                                throw new Error('missing property: items');
-                            if (!checkout.currency)
-                                throw new Error('missing property: currency');
-                            if (checkout.items.length === 0)
-                                throw new Error('no items');
-                            if (!checkout.shipping)
-                                throw new Error('missing property: shipping');
-                            if (!checkout.shipping.address && checkout.shipping.addressRequired)
-                                throw new Error('missing address field');
-                            for (i = 0; i < checkout.items.length; i++) {
-                                if (typeof checkout.items[i].amount === 'number')
-                                    checkout.items[i].amount = checkout.items[i].amount.toFixed(2);
-                            }
-                            if (typeof checkout.extraAmount === 'number')
-                                checkout.extraAmount = checkout.extraAmount.toFixed(2);
-                            if (typeof checkout.shipping.cost === 'number')
-                                checkout.shipping.cost = checkout.shipping.cost.toFixed(2);
-                            body = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\" ?>\n<checkout>\n    <sender>\n        <name>" + removeAccents.remove(checkout.sender.name) + "</name>\n        <email>" + checkout.sender.email + "</email>\n        <phone>\n            <areaCode>" + checkout.sender.phone.areaCode + "</areaCode>\n            <number>" + checkout.sender.phone.number + "</number>\n        </phone>\n\t\t<documents>" +
-                                checkout.sender.documents.map(function (doc) { return "\n\t\t\t<document>\n                <type>" + doc.type + "</type>\n                <value>" + doc.value + "</value>\n            </document>"; }).join('')
-                                + "\n        </documents>\n    </sender>\n    <currency>BRL</currency>\n    <items>" +
-                                checkout.items.map(function (item) { return "\n        <item>\n            <id>" + item.id + "</id>\n            <description>" + removeAccents.remove(item.description) + "</description>\n            <amount>" + item.amount + "</amount>\n            <quantity>" + item.quantity + "</quantity>\n            <weight>" + item.weight + "</weight>\n            " + (item.shippingCost ? "<shippingCost>" + item.shippingCost + "</shippingCost>" : '') + "\n        </item>"; }).join('')
-                                + "\n    </items>" + (checkout.redirectURL ? "\n    <redirectURL>" + checkout.redirectURL + "</redirectURL>" : '') + (checkout.notificationURL ? "\n    <notificationURL>" + checkout.notificationURL + "</notificationURL>" : '') + ("\n    <extraAmount>" + checkout.extraAmount + "</extraAmount>\n    <reference>" + checkout.reference + "</reference>\n    <shipping>\n        <address>\n            <street>" + removeAccents.remove(checkout.shipping.address.street) + "</street>\n            <number>" + removeAccents.remove(checkout.shipping.address.number) + "</number>\n            <complement>" + removeAccents.remove(checkout.shipping.address.complement) + "</complement>\n            <district>" + removeAccents.remove(checkout.shipping.address.district) + "</district>\n            <city>" + removeAccents.remove(checkout.shipping.address.city) + "</city>\n            <state>" + removeAccents.remove(checkout.shipping.address.state) + "</state>\n            <country>" + removeAccents.remove(checkout.shipping.address.country) + "</country>\n            <postalCode>" + checkout.shipping.address.postalCode + "</postalCode>\n        </address>\n        <type>" + checkout.shipping.type + "</type>\n        <cost>" + checkout.shipping.cost + "</cost>\n        <addressRequired>" + checkout.shipping.addressRequired + "</addressRequired>\n    </shipping>\n    <timeout>" + checkout.timeout + "</timeout>\n    <maxAge>" + checkout.maxAge + "</maxAge>\n    <maxUses>" + checkout.maxUses + "</maxUses>") + (checkout.receiver ? "\n    <receiver>\n        <email>" + checkout.receiver.email + "</email>\n    </receiver>" : '') + ("\n    <enableRecovery>" + (checkout.enableRecovery || false) + "</enableRecovery>") + (checkout.acceptedPaymentMethods && checkout.acceptedPaymentMethods.exclude ? "\n\t<acceptedPaymentMethods>" + (checkout.acceptedPaymentMethods.exclude ? "\n\t\t<exclude>" + (checkout.acceptedPaymentMethods.exclude.map(function (pm) { return "\n\t\t\t<paymentMethod>\n\t\t\t\t<group>" + pm.group + "</group>\n\t\t\t</paymentMethod>"; }).join('')) + "\n\t\t</exclude>" : '') + "\n\t</acceptedPaymentMethods>" : '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ? "\n    <paymentMethodConfigs>" + (checkout.paymentMethodConfigs.map(function (pmc) { return "\n        <paymentMethodConfig>\n            <paymentMethod>\n                <group>" + pmc.paymentMethod.group + "</group>\n            </paymentMethod>\n            <configs>" + (pmc.configs.map(function (pmce) { return "\n                <config>\n                    <key>" + pmce.key + "</key>\n                    <value>" + pmce.value + "</value>\n                </config>"; }).join('')) + "\n            </configs>\n        </paymentMethodConfig>"; }).join('')) + "\n    </paymentMethodConfigs>" : '') + "\n</checkout>";
-                            response = null;
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, function (err, resp) {
-                                    if (err) {
-                                        if (!cb)
-                                            throw err;
-                                        cb(err, resp);
-                                    }
-                                    else {
-                                        resp.checkout.date = new Date(Date.parse(resp.checkout.date));
-                                        if (mode === 'redirect')
-                                            resp.checkout.redirectUrl = _this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
-                                        if (mode === 'lightbox')
-                                            resp.checkout.scriptUrl = _this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
-                                        response = resp;
-                                        if (cb)
-                                            cb(err, resp);
-                                    }
-                                }, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1')];
-                        case 1:
-                            _a.sent();
-                            return [2 /*return*/, response];
+                    url = this.urlGen(endPoints.pagamentoAvulso.criarTransacao.url, {});
+                    if (!checkout)
+                        throw new Error('missing argument: checkout');
+                    if (!checkout.sender)
+                        throw new Error('missing property: sender');
+                    if (!checkout.items)
+                        throw new Error('missing property: items');
+                    if (!checkout.currency)
+                        throw new Error('missing property: currency');
+                    if (checkout.items.length === 0)
+                        throw new Error('no items');
+                    if (!checkout.shipping)
+                        throw new Error('missing property: shipping');
+                    if (!checkout.shipping.address && checkout.shipping.addressRequired)
+                        throw new Error('missing address field');
+                    for (i = 0; i < checkout.items.length; i++) {
+                        if (typeof checkout.items[i].amount === 'number')
+                            checkout.items[i].amount = checkout.items[i].amount.toFixed(2);
                     }
+                    if (typeof checkout.extraAmount === 'number')
+                        checkout.extraAmount = checkout.extraAmount.toFixed(2);
+                    if (typeof checkout.shipping.cost === 'number')
+                        checkout.shipping.cost = checkout.shipping.cost.toFixed(2);
+                    body = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\" ?>\n<checkout>\n    <sender>\n        <name>" + removeAccents.remove(checkout.sender.name) + "</name>\n        <email>" + checkout.sender.email + "</email>\n        <phone>\n            <areaCode>" + checkout.sender.phone.areaCode + "</areaCode>\n            <number>" + checkout.sender.phone.number + "</number>\n        </phone>\n\t\t<documents>" +
+                        checkout.sender.documents.map(function (doc) { return "\n\t\t\t<document>\n                <type>" + doc.type + "</type>\n                <value>" + doc.value + "</value>\n            </document>"; }).join('')
+                        + "\n        </documents>\n    </sender>\n    <currency>BRL</currency>\n    <items>" +
+                        checkout.items.map(function (item) { return "\n        <item>\n            <id>" + item.id + "</id>\n            <description>" + removeAccents.remove(item.description) + "</description>\n            <amount>" + item.amount + "</amount>\n            <quantity>" + item.quantity + "</quantity>\n            <weight>" + item.weight + "</weight>\n            " + (item.shippingCost ? "<shippingCost>" + item.shippingCost + "</shippingCost>" : '') + "\n        </item>"; }).join('')
+                        + "\n    </items>" + (checkout.redirectURL ? "\n    <redirectURL>" + checkout.redirectURL + "</redirectURL>" : '') + (checkout.notificationURL ? "\n    <notificationURL>" + checkout.notificationURL + "</notificationURL>" : '') + ("\n    <extraAmount>" + checkout.extraAmount + "</extraAmount>\n    <reference>" + checkout.reference + "</reference>\n    <shipping>\n        <address>\n            <street>" + removeAccents.remove(checkout.shipping.address.street) + "</street>\n            <number>" + removeAccents.remove(checkout.shipping.address.number) + "</number>\n            <complement>" + removeAccents.remove(checkout.shipping.address.complement) + "</complement>\n            <district>" + removeAccents.remove(checkout.shipping.address.district) + "</district>\n            <city>" + removeAccents.remove(checkout.shipping.address.city) + "</city>\n            <state>" + removeAccents.remove(checkout.shipping.address.state) + "</state>\n            <country>" + removeAccents.remove(checkout.shipping.address.country) + "</country>\n            <postalCode>" + checkout.shipping.address.postalCode + "</postalCode>\n        </address>\n        <type>" + checkout.shipping.type + "</type>\n        <cost>" + checkout.shipping.cost + "</cost>\n        <addressRequired>" + checkout.shipping.addressRequired + "</addressRequired>\n    </shipping>\n    <timeout>" + checkout.timeout + "</timeout>\n    <maxAge>" + checkout.maxAge + "</maxAge>\n    <maxUses>" + checkout.maxUses + "</maxUses>") + (checkout.receiver ? "\n    <receiver>\n        <email>" + checkout.receiver.email + "</email>\n    </receiver>" : '') + ("\n    <enableRecovery>" + (checkout.enableRecovery || false) + "</enableRecovery>") + (checkout.acceptedPaymentMethods && checkout.acceptedPaymentMethods.exclude ? "\n\t<acceptedPaymentMethods>" + (checkout.acceptedPaymentMethods.exclude ? "\n\t\t<exclude>" + (checkout.acceptedPaymentMethods.exclude.map(function (pm) { return "\n\t\t\t<paymentMethod>\n\t\t\t\t<group>" + pm.group + "</group>\n\t\t\t</paymentMethod>"; }).join('')) + "\n\t\t</exclude>" : '') + "\n\t</acceptedPaymentMethods>" : '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ? "\n    <paymentMethodConfigs>" + (checkout.paymentMethodConfigs.map(function (pmc) { return "\n        <paymentMethodConfig>\n            <paymentMethod>\n                <group>" + pmc.paymentMethod.group + "</group>\n            </paymentMethod>\n            <configs>" + (pmc.configs.map(function (pmce) { return "\n                <config>\n                    <key>" + pmce.key + "</key>\n                    <value>" + pmce.value + "</value>\n                </config>"; }).join('')) + "\n            </configs>\n        </paymentMethodConfig>"; }).join('')) + "\n    </paymentMethodConfigs>" : '') + "\n</checkout>";
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            _this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, function (err, resp) {
+                                if (err) {
+                                    if (callback)
+                                        callback(err, resp);
+                                    else
+                                        reject(err);
+                                }
+                                else {
+                                    resp.checkout.date = new Date(Date.parse(resp.checkout.date));
+                                    if (mode === 'redirect')
+                                        resp.checkout.redirectUrl = _this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
+                                    if (mode === 'lightbox')
+                                        resp.checkout.scriptUrl = _this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
+                                    resolve(resp);
+                                    if (callback)
+                                        callback(err, resp);
+                                }
+                            }, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
+                        })];
                 });
             });
         };

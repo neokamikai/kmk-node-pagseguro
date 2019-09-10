@@ -499,33 +499,33 @@ export namespace PagSeguro {
 	* @param {any} body response body
 	*/
 			const responseHandler = function (err, response, body) {
-				console.log('[PagSeguro Response] Status:', response.statusCode, response.statusMessage);
-				console.log('[PagSeguro Response] Content Type:', response.headers["content-type"]);
-				console.log('[PagSeguro Response] Body:', body);
-				const fs = require('fs');
-				fs.writeFileSync('response-body.txt', body);
+				//console.log('[PagSeguro Response] Status:', response.statusCode, response.statusMessage);
+				//console.log('[PagSeguro Response] Content Type:', response.headers["content-type"]);
+				//console.log('[PagSeguro Response] Body:', body);
+				//const fs = require('fs');
+				//fs.writeFileSync('response-body.txt', body);
 				if (body) {
-					console.log('[PagSeguro Response] Parsing body...');
+					//console.log('[PagSeguro Response] Parsing body...');
 					try {
 						body = JSON.parse(body);
-						console.log('[PagSeguro Response] JSON Body parsed!');
+						//console.log('[PagSeguro Response] JSON Body parsed!');
 					} catch (e) {
 						try {
 							body = JSON.parse(xmlParser.toJson(body));
-							console.log('[PagSeguro Response] XML Body parsed!');
+							//console.log('[PagSeguro Response] XML Body parsed!');
 						} catch (e) {
 						}
 					}
 				}
 				if (err) {
-					console.log('[PagSeguro Response] Error:', err);
+					//console.log('[PagSeguro Response] Error:', err);
 					return cb(err, body);
 				} else if (response.statusCode == 200) {
 					return cb(null, body);
 				} else {
 					try {
 						if (body) {
-							console.log('[PagSeguro Response] Response Body:', body);
+							//console.log('[PagSeguro Response] Response Body:', body);
 							const json = body;
 							if (json.errors && json.errors.error) {
 								return cb(json.errors.error, json);
@@ -541,7 +541,8 @@ export namespace PagSeguro {
 							}
 
 						} catch (e) {
-							console.log(body);
+							throw e;
+							//console.log(body);
 						}
 					}
 					return cb(body);
@@ -557,10 +558,6 @@ export namespace PagSeguro {
 					}
 				case 'POST':
 					{
-						console.log('[PagSeguro Request] URL:', url);
-						console.log('[PagSeguro Request] Accept:', accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept);
-						console.log('[PagSeguro Request] Content-Type:', contentType);
-						console.log('[PagSeguro Request] Body:', body);
 						return await request.post({
 							url, body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
 						}, responseHandler);
@@ -588,7 +585,7 @@ export namespace PagSeguro {
 				cb(err, !response || !response.session || !response.session.id ? null : response.session.id)
 				, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
 		}
-		async criarTransacao(checkout: PagSeguroCheckout, cb: (err, response: ICreateTransactionResponse) => void, mode: PagSeguroCheckoutMode = 'redirect') {
+		async criarTransacao(checkout: PagSeguroCheckout, callback?: (err, response: ICreateTransactionResponse) => void, mode: PagSeguroCheckoutMode = 'redirect') {
 			let url = this.urlGen(endPoints.pagamentoAvulso.criarTransacao.url, {});
 			if (!checkout) throw new Error('missing argument: checkout');
 			if (!checkout.sender) throw new Error('missing property: sender');
@@ -683,21 +680,22 @@ export namespace PagSeguro {
     </paymentMethodConfigs>`:'')+`
 </checkout>`;
 
-			let response: ICreateTransactionResponse = null;
-			await this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, (err, resp) => {
-				if (err) {
-					if(!cb) throw err;
-					cb(err, resp);
-				}
-				else {
-					resp.checkout.date = new Date(Date.parse(resp.checkout.date));
-					if (mode === 'redirect') resp.checkout.redirectUrl = this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
-					if (mode === 'lightbox') resp.checkout.scriptUrl = this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
-					response = resp;
-					if(cb)cb(err, resp);
-				}
-			}, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
-			return response;
+			return new Promise((resolve, reject) => {
+				this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, (err, resp) => {
+					if (err) {
+						if(callback) callback(err, resp);
+						else reject(err);
+
+					}
+					else {
+						resp.checkout.date = new Date(Date.parse(resp.checkout.date));
+						if (mode === 'redirect') resp.checkout.redirectUrl = this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
+						if (mode === 'lightbox') resp.checkout.scriptUrl = this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
+						resolve(resp);
+						if(callback)callback(err, resp);
+					}
+				}, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
+			});
 		}
 
 		/**
@@ -796,7 +794,7 @@ export namespace PagSeguro {
 			startCreationDate = startCreationDate.toJSON();
 			endCreationDate = endCreationDate.toJSON();
 			const url = this.urlGen(endPoints.pagamentoRecorrente.getPlanos.url, { status, startCreationDate, endCreationDate });
-			console.log(url);
+			//console.log(url);
 			return await this.doRequest('GET', url, null, cb);
 		};
 

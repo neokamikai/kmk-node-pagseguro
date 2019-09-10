@@ -379,7 +379,7 @@ export declare namespace PagSeguro {
         private scriptUrlGen;
         private doRequest;
         sessionId(cb: (err: any, sessionId: string) => any): Promise<any>;
-        criarTransacao(checkout: PagSeguroCheckout, cb: (err: any, response: ICreateTransactionResponse) => void, mode?: PagSeguroCheckoutMode): Promise<ICreateTransactionResponse>;
+        criarTransacao(checkout: PagSeguroCheckout, callback?: (err: any, response: ICreateTransactionResponse) => void, mode?: PagSeguroCheckoutMode): Promise<unknown>;
         /**
          *
          * @param plano
