@@ -444,6 +444,7 @@ export namespace PagSeguro {
 	}
 	export class Client {
 		private baseUrl: string = "https://ws.sandbox.pagseguro.uol.com.br";
+		private paymentUrl: string = "https://sandbox.pagseguro.uol.com.br";
 		private scriptBaseUrl: string = "https://stc.sandbox.pagseguro.uol.com.br/pagseguro/api";
 		private parameters: Parameters = { appId: "", appKey: "", currency: "BRL", email: "", environment: "sandbox", token: "", verbose: false };
 		constructor(parameters: Parameters) {
@@ -451,6 +452,7 @@ export namespace PagSeguro {
 			if (this.parameters.environment === 'production') {
 				this.baseUrl = 'https://ws.pagseguro.uol.com.br';
 				this.scriptBaseUrl = 'https://stc.pagseguro.uol.com.br/pagseguro/api';
+				this.paymentUrl = 'https://pagseguro.uol.com.br';
 			}
 		}
 		private redirectUrlGen(route: string, queryStringParameters = {}) {
@@ -468,6 +470,24 @@ export namespace PagSeguro {
 				queryParams = Object.assign(queryParams, queryStringParameters);
 			}
 			return `${this.baseUrl}${route}?${qsStringify(queryParams)}`;
+		}
+		private paymentUrlGen(route: string, queryStringParameters = {}) {
+			let queryParams = ((): any => {
+				return { email: this.parameters.email, token: this.parameters.token };
+			})();
+			if (typeof queryStringParameters === "string") { queryStringParameters = qsParse(queryStringParameters); }
+			if (typeof queryStringParameters === "object" && !Array.isArray(queryStringParameters)) {
+				const params = route.match(/\:([^\/]+)/g);
+				if (params) {
+					for (let param of params) {
+						param = param.substr(1);
+						route = route.replace(`:${param}`, queryStringParameters[param]);
+						delete queryStringParameters[param];
+					}
+				}
+				queryParams = Object.assign(queryParams, queryStringParameters);
+			}
+			return `${this.paymentUrl}${route}?${qsStringify(queryParams)}`;
 		}
 		private urlGen(route: string, queryStringParameters = {}) {
 			let queryParams = ((): any => {
@@ -689,7 +709,7 @@ export namespace PagSeguro {
 					}
 					else {
 						resp.checkout.date = new Date(Date.parse(resp.checkout.date));
-						if (mode === 'redirect') resp.checkout.redirectUrl = this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
+						if (mode === 'redirect') resp.checkout.redirectUrl = this.paymentUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
 						if (mode === 'lightbox') resp.checkout.scriptUrl = this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
 						resolve(resp);
 						if(callback)callback(err, resp);
