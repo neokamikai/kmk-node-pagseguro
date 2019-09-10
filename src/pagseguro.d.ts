@@ -23,6 +23,35 @@ export declare namespace PagSeguro {
         code: string;
         date: Date;
     }
+    interface ITransactionObjectPaymentMethod {
+        type: number;
+        code: number;
+    }
+    interface ITransactionObjectCreditorFees {
+        intermediationRateAmount: PagSeguroAmount;
+        intermediationFeeAmount: PagSeguroAmount;
+    }
+    interface ITransactionObject {
+        date: Date;
+        code: string;
+        reference: string;
+        type: number;
+        status: number;
+        paymentMethod: ITransactionObjectPaymentMethod;
+        grossAmount: PagSeguroAmount;
+        discountAmount: PagSeguroAmount;
+        creditorFees: ITransactionObjectCreditorFees;
+        netAmount: PagSeguroAmount;
+        extraAmount: PagSeguroAmount;
+        installmentCount: number;
+        itemCount: number;
+        items: Array<PagSeguroCheckoutItem>;
+        sender: PagSeguroCheckoutSender;
+        shipping: PagSeguroCheckoutShipping;
+    }
+    interface IGetCheckoutTransactionResponse {
+        transaction: ITransactionObject;
+    }
     type PagSeguroCurrency = 'BRL';
     type EnvironmentType = 'production' | 'sandbox';
     /** Must have 2 decimal places: 10.00
@@ -381,7 +410,8 @@ export declare namespace PagSeguro {
         private scriptUrlGen;
         private doRequest;
         sessionId(cb: (err: any, sessionId: string) => any): Promise<any>;
-        criarTransacao(checkout: PagSeguroCheckout, callback?: (err: any, response: ICreateTransactionResponse) => void, mode?: PagSeguroCheckoutMode): Promise<unknown>;
+        criarTransacao(checkout: PagSeguroCheckout, callback?: (err: any, response: ICreateTransactionResponse) => void, mode?: PagSeguroCheckoutMode): Promise<ICreateTransactionResponse>;
+        consultaRetornoTransacaoCheckout(notificationCode: string, callback?: (err: any, response: IGetCheckoutTransactionResponse) => void): Promise<IGetCheckoutTransactionResponse>;
         /**
          *
          * @param plano
@@ -401,7 +431,7 @@ export declare namespace PagSeguro {
         concederDescontoProxCob(cb: any): Promise<any>;
         getAdesao(cb: any): Promise<any>;
         getAdesoes(cb: any): Promise<any>;
-        getNotificacoes(cb: any): Promise<any>;
+        getNotificacoesRecorrencias(cb: any): Promise<any>;
         /**
          *
          * @param {'ACTIVE' | 'INACTIVE'} status Default: ACTIVE

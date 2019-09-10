@@ -75,7 +75,9 @@ var endPoints = {
     pagamentoAvulso: {
         criarTransacao: { method: 'POST', url: '/v2/checkout' },
         redirectToPayment: { method: 'GET', url: '/v2/checkout/payment.html' },
-        lightboxPayment: { method: 'GET', url: '/v2/checkout/pagseguro.lightbox.js' }
+        lightboxPayment: { method: 'GET', url: '/v2/checkout/pagseguro.lightbox.js' },
+        consultaRetornoTransacao: { method: 'GET', url: '/v3/transactions/notifications/:notificationCode' },
+        consultaTransacao: { method: 'GET', url: '/v3/transactions/:transactionCode' },
     }
 };
 var constants;
@@ -428,7 +430,7 @@ var PagSeguro;
                             }
                             return [3 /*break*/, 9];
                         case 1: return [4 /*yield*/, request.get({
-                                url: url, headers: { accept: 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' }
+                                url: url, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept }
                             }, responseHandler)];
                         case 2: return [2 /*return*/, _b.sent()];
                         case 3: return [4 /*yield*/, request.post({
@@ -518,6 +520,37 @@ var PagSeguro;
                                         callback(err, resp);
                                 }
                             }, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
+                        })];
+                });
+            });
+        };
+        Client.prototype.consultaRetornoTransacaoCheckout = function (notificationCode, callback) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoAvulso.consultaRetornoTransacao.url, { notificationCode: notificationCode });
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoAvulso.consultaRetornoTransacao.method, url, {}, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                }, 'application/x-www-form-urlencoded', 'application/xml;charset=ISO-8859-1')];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); })();
                         })];
                 });
             });
@@ -696,7 +729,7 @@ var PagSeguro;
             });
         };
         ;
-        Client.prototype.getNotificacoes = function (cb) {
+        Client.prototype.getNotificacoesRecorrencias = function (cb) {
             return __awaiter(this, void 0, void 0, function () {
                 var url;
                 return __generator(this, function (_a) {

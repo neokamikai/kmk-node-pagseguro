@@ -41,7 +41,10 @@ const endPoints = {
 	pagamentoAvulso: {
 		criarTransacao: { method: 'POST', url: '/v2/checkout' },
 		redirectToPayment: { method: 'GET', url: '/v2/checkout/payment.html' },
-		lightboxPayment: { method: 'GET', url: '/v2/checkout/pagseguro.lightbox.js' }
+		lightboxPayment: { method: 'GET', url: '/v2/checkout/pagseguro.lightbox.js' },
+		consultaRetornoTransacao: { method: 'GET', url:'/v3/transactions/notifications/:notificationCode'},
+		consultaTransacao: { method: 'GET', url:'/v3/transactions/:transactionCode'},
+
 	}
 };
 
@@ -63,8 +66,37 @@ export namespace PagSeguro {
 		checkout: ICreateTransactionResponseCheckout;
 	}
 	interface ICreateTransactionResponseCheckout {
-		code: string,
-		date: Date
+		code: string;
+		date: Date;
+	}
+	interface ITransactionObjectPaymentMethod {
+		type: number;
+		code: number;
+	}
+	interface ITransactionObjectCreditorFees {
+		intermediationRateAmount: PagSeguroAmount;
+		intermediationFeeAmount: PagSeguroAmount;
+	}
+	interface ITransactionObject {
+		date: Date;
+		code: string;
+		reference: string;
+		type: number;
+		status:number;
+		paymentMethod: ITransactionObjectPaymentMethod;
+		grossAmount: PagSeguroAmount;
+		discountAmount: PagSeguroAmount;
+		creditorFees: ITransactionObjectCreditorFees;
+		netAmount: PagSeguroAmount;
+		extraAmount: PagSeguroAmount;
+		installmentCount: number;
+		itemCount: number;
+		items: Array<PagSeguroCheckoutItem>;
+		sender: PagSeguroCheckoutSender;
+		shipping: PagSeguroCheckoutShipping;
+	}
+	interface IGetCheckoutTransactionResponse {
+		transaction: ITransactionObject
 	}
 	type PagSeguroCurrency = 'BRL';
 	type EnvironmentType = 'production' | 'sandbox';
@@ -573,7 +605,7 @@ export namespace PagSeguro {
 				case 'GET':
 					{
 						return await request.get({
-							url, headers: { accept: 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' }
+							url, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept }
 						}, responseHandler);
 					}
 				case 'POST':
@@ -700,7 +732,7 @@ export namespace PagSeguro {
     </paymentMethodConfigs>`:'')+`
 </checkout>`;
 
-			return new Promise((resolve, reject) => {
+			return new Promise<ICreateTransactionResponse>((resolve, reject) => {
 				this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, (err, resp) => {
 					if (err) {
 						if(callback) callback(err, resp);
@@ -717,7 +749,23 @@ export namespace PagSeguro {
 				}, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
 			});
 		}
+		async consultaRetornoTransacaoCheckout(notificationCode: string, callback?:(err, response: IGetCheckoutTransactionResponse) => void){
+			return new Promise<IGetCheckoutTransactionResponse>((resolve, reject) => {
+				(async ()=>{
+					const url = this.urlGen(endPoints.pagamentoAvulso.consultaRetornoTransacao.url, { notificationCode });
+					await this.doRequest(endPoints.pagamentoAvulso.consultaRetornoTransacao.method, url, {}, (err, resp) => {
+						if(callback) callback(err, resp);
+						if(err){
+							reject(err);
+						}
+						else{
+							resolve(resp);
+						}
+					}, 'application/x-www-form-urlencoded', 'application/xml;charset=ISO-8859-1');
 
+				})();
+			});
+		}
 		/**
 		 *
 		 * @param plano
@@ -784,7 +832,7 @@ export namespace PagSeguro {
 			const url = this.urlGen(endPoints.pagamentoRecorrente.getAdesoes.url, {});
 			return await this.doRequest(endPoints.pagamentoRecorrente.getAdesoes.method, url, null, cb);
 		};
-		async getNotificacoes(cb) {
+		async getNotificacoesRecorrencias(cb) {
 			const url = this.urlGen(endPoints.pagamentoRecorrente.getNotificacoes.url, {});
 			return await this.doRequest(endPoints.pagamentoRecorrente.getNotificacoes.method, url, null, cb);
 		};

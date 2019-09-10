@@ -1,9 +1,7 @@
-const {PagSeguro} = require('../')
-let client = new PagSeguro.Client({
-	appId: 'app9999999999', appKey: '8165021DE9E9335004C84FB8C3AD3C04', environment: 'sandbox',
-	email: 'your@email.com', token: 'AA7191337B7559288EF80A708A31A4C4'
+const {PagSeguro} = require('../');
 
-});
+let credentials = require('./credentials.json');
+let client = new PagSeguro.Client(credentials);
 
 let stdin = process.openStdin();
 console.log('App started!');
@@ -12,6 +10,18 @@ stdin.on('data', e => {
 	if (!txt) return;
 	let cmd = txt.split(/\s/)[0];
 	switch (cmd) {
+		case 'consulta-retorno-transacao':{
+			let code = txt.split(/\s/)[1];
+			if(!code) return console.log('Código de transação não informado!');
+			client.consultaRetornoTransacaoCheckout(code, (err, resp) => {
+				if(err){
+					console.error('Error:',err);
+				}
+				else {
+					console.log(resp.transaction);
+				}
+			}).catch(() => {});
+		}break;
 		case 'criar-transacao': {
 			client.criarTransacao({
 				currency: "BRL",

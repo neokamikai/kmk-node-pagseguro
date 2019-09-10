@@ -66,3 +66,4 @@ package-lock.json
 /target
 /bin
 /obj
+/sample/credentials.json

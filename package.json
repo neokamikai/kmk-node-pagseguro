@@ -1,6 +1,6 @@
 {
 	"name": "kmk-node-pagseguro",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
@@ -42,6 +42,8 @@
 	},
 	"devDependencies": {
 		"eslint": "^6.3.0",
+		"gulp": "^4.0.2",
+		"node-watch": "^0.6.3",
 		"nodemon": "^1.19.2",
 		"typescript": "^3.5.3"
 	}
