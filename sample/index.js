@@ -1,6 +1,7 @@
 const {PagSeguro} = require('../')
 let client = new PagSeguro.Client({
-	appId: 'app0242712020', appKey:'8165020DE9E9335004C83FB8C3AD3C04', environment: 'sandbox',
+	appId: 'app0242712020', appKey: '8165020DE9E9335004C83FB8C3AD3C04', environment: 'sandbox',
+	email: 'kamikai@gmail.com', token: 'AA4191337B7449288EF89A708A31A4C4'
 	
 });
 
@@ -18,12 +19,12 @@ stdin.on('data', e => {
 					{
 						id: '1',
 						amount: 10,
-						name: 'Produto teste',
+						description: 'Produto teste',
 						quantity: 1,
 						weight: 1
 					}
 				],
-				redirectURL: 'http://casa.douglasdomingues.com.br:35180',
+				redirectURL: '',
 				notificationURL: '',
 				sender: {
 					name: 'Jose Comprador',
@@ -58,6 +59,13 @@ stdin.on('data', e => {
 				maxUses: 999,
 				extraAmount: '0.00',
 				reference: 'TESTE'
+			}, (err, resp) => { 
+					if (err) {
+						console.log('Error:', err);
+					}
+					else {
+						console.log('Success!', resp);
+					}
 			});
 		}
 		default:

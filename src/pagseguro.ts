@@ -1,6 +1,7 @@
 import { stringify as qsStringify, parse as qsParse } from "querystring";
 import * as xmlParser from 'xml2json'
 import * as request from 'request';
+import * as qs from 'qs';
 const endPoints = {
 	sessionId: { method: 'POST', url: '/v2/sessions' },
 	pagamentoRecorrente: {
@@ -35,7 +36,9 @@ const endPoints = {
 
 	},
 	pagamentoAvulso: {
-		criarTransacao: { method: 'POST', url:'/v2/checkout'}
+		criarTransacao: { method: 'POST', url: '/v2/checkout' },
+		redirectToPayment: { method: 'GET', url: '/v2/checkout/payment.html' },
+		lightboxPayment: { method: 'GET', url: '/v2/checkout/pagseguro.lightbox.js' }
 	}
 };
 
@@ -49,9 +52,17 @@ export namespace constants {
 
 }
 export type Charge = 'AUTO' | 'MANUAL';
-
+export type PagSeguroCheckoutPaymentMethod = 'CREDIT_CARD' | 'BOLETO' |'DEBITO_ITAU';
 export type Period = 'YEARLY' | 'MONTHLY' | 'BIMONTHLY' | 'TRIMONTHLY' | 'SEMIANNUALLY' | 'WEEKLY'
 export namespace PagSeguro {
+
+	interface ICreateTransactionResponse {
+		checkout: ICreateTransactionResponseCheckout;
+	}
+	interface ICreateTransactionResponseCheckout {
+		code: string,
+		date: Date
+	}
 	type PagSeguroCurrency = 'BRL';
 	type EnvironmentType = 'production' | 'sandbox';
 	/** Must have 2 decimal places: 10.00
@@ -59,6 +70,7 @@ export namespace PagSeguro {
 	 * If data type is 'number': it will be automatically 'fixed' to 2 decimal places
 	 */
 	type PagSeguroAmount = string | number;
+	type PagSeguroCheckoutMode = 'redirect' | 'lightbox';
 	export interface IParameters {
 		environment: string | "sandbox" | "production";
 		email: string;
@@ -376,7 +388,7 @@ export namespace PagSeguro {
 	}
 	export class PagSeguroCheckoutItem {
 		id: string;
-		name: string;
+		description: string;
 		amount: PagSeguroAmount;
 		quantity: number;
 		weight: number;
@@ -392,6 +404,21 @@ export namespace PagSeguro {
 	export class PagSeguroCheckoutReceiver {
 		email: string;
 	}
+	export class PagSeguroCheckoutAcceptedPaymentMethods {
+		exclude: Array<PagSeguroCheckoutAcceptedPaymentMethod>
+	}
+	export class PagSeguroCheckoutAcceptedPaymentMethod {
+		group: PagSeguroCheckoutPaymentMethod
+	}
+	export class PagSeguroCheckoutPaymentMethodConfig {
+		paymentMethod: PagSeguroCheckoutAcceptedPaymentMethod;
+		configs: Array<PagSeguroCheckoutPaymentMethodConfigEntry>
+	}
+	type PagSeguroCheckoutPaymentMethodConfigType = 'DISCOUNT_PERCENT' | 'MAX_INSTALLMENTS_NO_INTEREST' | 'MAX_INSTALLMENTS';
+	export class PagSeguroCheckoutPaymentMethodConfigEntry {
+		key: PagSeguroCheckoutPaymentMethodConfigType;
+		value: string;
+	}
 	export class PagSeguroCheckout {
 		public sender: PagSeguroCheckoutSender;
 		public currency: PagSeguroCurrency;
@@ -399,7 +426,7 @@ export namespace PagSeguro {
 		public redirectURL: string;
 		public notificationURL: string;
 		public extraAmount?: PagSeguroAmount;
-		public reference?:string;
+		public reference?: string;
 		public shipping: PagSeguroCheckoutShipping;
 		/** Default is 25 */
 		public timeout: number;
@@ -408,12 +435,36 @@ export namespace PagSeguro {
 		/** Max Value is: 999 */
 		public maxUses?: number;
 		public receiver?: PagSeguroCheckoutReceiver;
+		public acceptedPaymentMethods?: PagSeguroCheckoutAcceptedPaymentMethods;
+		public paymentMethodConfigs?: Array<PagSeguroCheckoutPaymentMethodConfig>;
+		public enableRecovery: boolean;
 	}
 	export class Client {
 		private baseUrl: string = "https://ws.sandbox.pagseguro.uol.com.br";
+		private scriptBaseUrl: string = "https://stc.sandbox.pagseguro.uol.com.br/pagseguro/api";
 		private parameters: Parameters = { appId: "", appKey: "", currency: "BRL", email: "", environment: "sandbox", token: "", verbose: false };
 		constructor(parameters: Parameters) {
 			this.parameters = parameters;
+			if (this.parameters.environment === 'production') {
+				this.baseUrl = 'https://ws.pagseguro.uol.com.br';
+				this.scriptBaseUrl = 'https://stc.pagseguro.uol.com.br/pagseguro/api';
+			}
+		}
+		private redirectUrlGen(route: string, queryStringParameters = {}) {
+			let queryParams = {};
+			if (typeof queryStringParameters === "string") { queryStringParameters = qsParse(queryStringParameters); }
+			if (typeof queryStringParameters === "object" && !Array.isArray(queryStringParameters)) {
+				const params = route.match(/\:([^\/]+)/g);
+				if (params) {
+					for (let param of params) {
+						param = param.substr(1);
+						route = route.replace(`:${param}`, queryStringParameters[param]);
+						delete queryStringParameters[param];
+					}
+				}
+				queryParams = Object.assign(queryParams, queryStringParameters);
+			}
+			return `${this.baseUrl}${route}?${qsStringify(queryParams)}`;
 		}
 		private urlGen(route: string, queryStringParameters = {}) {
 			let queryParams = ((): any => {
@@ -433,7 +484,9 @@ export namespace PagSeguro {
 			}
 			return `${this.baseUrl}${route}?${qsStringify(queryParams)}`;
 		}
-
+		private scriptUrlGen(route: string) {
+			return `${this.scriptBaseUrl}${route}`;
+		}
 		private async doRequest(method: string, url: string, body: any, cb: Function, contentType: string = null, accept: string = null) {
 			if (typeof cb === 'undefined') cb = () => { };
 			/**
@@ -528,7 +581,7 @@ export namespace PagSeguro {
 				cb(err, !response || !response.session || !response.session.id ? null : response.session.id)
 				, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
 		}
-		async criarTransacao(checkout: PagSeguroCheckout) {
+		async criarTransacao(checkout: PagSeguroCheckout, cb: (err, response: ICreateTransactionResponse) => void, mode: PagSeguroCheckoutMode = 'redirect') {
 			let url = this.urlGen(endPoints.pagamentoAvulso.criarTransacao.url, {});
 			if (!checkout) throw new Error('missing argument: checkout');
 			if (!checkout.sender) throw new Error('missing property: sender');
@@ -536,8 +589,101 @@ export namespace PagSeguro {
 			if (!checkout.currency) throw new Error('missing property: currency');
 			if (checkout.items.length === 0) throw new Error('no items');
 			if (!checkout.shipping) throw new Error('missing property: shipping');
-			if (!checkout.shipping.address && checkout.shipping.addressRequired) throw new Error('missing adress field');
-			
+			if (!checkout.shipping.address && checkout.shipping.addressRequired) throw new Error('missing address field');
+			for (let i = 0; i < checkout.items.length; i++) {
+				if (typeof checkout.items[i].amount === 'number') checkout.items[i].amount = (checkout.items[i].amount as number).toFixed(2);
+			}
+			if (typeof checkout.extraAmount === 'number')
+				checkout.extraAmount = checkout.extraAmount.toFixed(2);
+			if (typeof checkout.shipping.cost === 'number')
+				checkout.shipping.cost = checkout.shipping.cost.toFixed(2);
+			let body = `<?xml version="1.0" ?>
+<checkout>
+    <sender>
+        <name>${checkout.sender.name}</name>
+        <email>${checkout.sender.email}</email>
+        <phone>
+            <areaCode>${checkout.sender.phone.areaCode}</areaCode>
+            <number>${checkout.sender.phone.number}</number>
+        </phone>
+		<documents>`+
+				checkout.sender.documents.map(doc => `
+			<document>
+                <type>${doc.type}</type>
+                <value>${doc.value}</value>
+            </document>`)
+				+ `
+        </documents>
+    </sender>
+    <currency>BRL</currency>
+    <items>`+
+				checkout.items.map(item => `
+        <item>
+            <id>${item.id}</id>
+            <description>${item.description}</description>
+            <amount>${item.amount}</amount>
+            <quantity>${item.quantity}</quantity>
+            <weight>${item.weight}</weight>
+            `+ (item.shippingCost ? `<shippingCost>${item.shippingCost}</shippingCost>` : '') + `
+        </item>`)
+				+ `
+    </items>`+ (checkout.redirectURL ? `
+    <redirectURL>${checkout.redirectURL}</redirectURL>` : '') + (checkout.notificationURL ? `
+    <notificationURL>${checkout.notificationURL}</notificationURL>` : '') + `
+    <extraAmount>${checkout.extraAmount}</extraAmount>
+    <reference>${checkout.reference}</reference>
+    <shipping>
+        <address>
+            <street>${checkout.shipping.address.street}</street>
+            <number>${checkout.shipping.address.number}</number>
+            <complement>${checkout.shipping.address.complement}</complement>
+            <district>${checkout.shipping.address.district}</district>
+            <city>${checkout.shipping.address.city}</city>
+            <state>${checkout.shipping.address.state}</state>
+            <country>${checkout.shipping.address.country}</country>
+            <postalCode>${checkout.shipping.address.postalCode}</postalCode>
+        </address>
+        <type>${checkout.shipping.type}</type>
+        <cost>${checkout.shipping.cost}</cost>
+        <addressRequired>${checkout.shipping.addressRequired}</addressRequired>
+    </shipping>
+    <timeout>${checkout.timeout}</timeout>
+    <maxAge>${checkout.maxAge}</maxAge>
+    <maxUses>${checkout.maxUses}</maxUses>` + (checkout.receiver ? `
+    <receiver>
+        <email>${checkout.receiver.email}</email>
+    </receiver>`: '') + `
+    <enableRecovery>${checkout.enableRecovery || false}</enableRecovery>` + (checkout.acceptedPaymentMethods && checkout.acceptedPaymentMethods.exclude ?`
+	<acceptedPaymentMethods>`+ (checkout.acceptedPaymentMethods.exclude ?`
+		<exclude>`+ (checkout.acceptedPaymentMethods.exclude.map(pm =>`
+			<paymentMethod>
+				<group>${pm.group}</group>
+			</paymentMethod>`))+`
+		</exclude>`:'')+`
+	</acceptedPaymentMethods>`: '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ?`
+    <paymentMethodConfigs>`+ (checkout.paymentMethodConfigs.map(pmc => `
+        <paymentMethodConfig>
+            <paymentMethod>
+                <group>${pmc.paymentMethod.group}</group>
+            </paymentMethod>
+            <configs>`+(pmc.configs.map(pmce => `
+                <config>
+                    <key>${pmce.key}</key>
+                    <value>${pmce.value}</value>
+                </config>`))+`
+            </configs>
+        </paymentMethodConfig>`))+`
+    </paymentMethodConfigs>`:'')+`
+</checkout>`;
+			return await this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, (err, resp) => {
+				if (err) cb(err, resp);
+				else {
+					resp.checkout.date = new Date(Date.parse(resp.checkout.date));
+					if (mode === 'redirect') resp.checkout.redirectUrl = this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
+					if (mode === 'lightbox') resp.checkout.scriptUrl = this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
+					cb(err, resp);
+				}
+			}, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
 		}
 
 		/**

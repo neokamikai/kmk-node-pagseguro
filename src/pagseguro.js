@@ -71,7 +71,9 @@ var endPoints = {
         },
     },
     pagamentoAvulso: {
-        criarTransacao: { method: 'POST', url: '/v2/checkout' }
+        criarTransacao: { method: 'POST', url: '/v2/checkout' },
+        redirectToPayment: { method: 'GET', url: '/v2/checkout/payment.html' },
+        lightboxPayment: { method: 'GET', url: '/v2/checkout/pagseguro.lightbox.js' }
     }
 };
 var constants;
@@ -237,6 +239,30 @@ var PagSeguro;
         return PagSeguroCheckoutReceiver;
     }());
     PagSeguro.PagSeguroCheckoutReceiver = PagSeguroCheckoutReceiver;
+    var PagSeguroCheckoutAcceptedPaymentMethods = /** @class */ (function () {
+        function PagSeguroCheckoutAcceptedPaymentMethods() {
+        }
+        return PagSeguroCheckoutAcceptedPaymentMethods;
+    }());
+    PagSeguro.PagSeguroCheckoutAcceptedPaymentMethods = PagSeguroCheckoutAcceptedPaymentMethods;
+    var PagSeguroCheckoutAcceptedPaymentMethod = /** @class */ (function () {
+        function PagSeguroCheckoutAcceptedPaymentMethod() {
+        }
+        return PagSeguroCheckoutAcceptedPaymentMethod;
+    }());
+    PagSeguro.PagSeguroCheckoutAcceptedPaymentMethod = PagSeguroCheckoutAcceptedPaymentMethod;
+    var PagSeguroCheckoutPaymentMethodConfig = /** @class */ (function () {
+        function PagSeguroCheckoutPaymentMethodConfig() {
+        }
+        return PagSeguroCheckoutPaymentMethodConfig;
+    }());
+    PagSeguro.PagSeguroCheckoutPaymentMethodConfig = PagSeguroCheckoutPaymentMethodConfig;
+    var PagSeguroCheckoutPaymentMethodConfigEntry = /** @class */ (function () {
+        function PagSeguroCheckoutPaymentMethodConfigEntry() {
+        }
+        return PagSeguroCheckoutPaymentMethodConfigEntry;
+    }());
+    PagSeguro.PagSeguroCheckoutPaymentMethodConfigEntry = PagSeguroCheckoutPaymentMethodConfigEntry;
     var PagSeguroCheckout = /** @class */ (function () {
         function PagSeguroCheckout() {
         }
@@ -246,15 +272,17 @@ var PagSeguro;
     var Client = /** @class */ (function () {
         function Client(parameters) {
             this.baseUrl = "https://ws.sandbox.pagseguro.uol.com.br";
+            this.scriptBaseUrl = "https://stc.sandbox.pagseguro.uol.com.br/pagseguro/api";
             this.parameters = { appId: "", appKey: "", currency: "BRL", email: "", environment: "sandbox", token: "", verbose: false };
             this.parameters = parameters;
+            if (this.parameters.environment === 'production') {
+                this.baseUrl = 'https://ws.pagseguro.uol.com.br';
+                this.scriptBaseUrl = 'https://stc.pagseguro.uol.com.br/pagseguro/api';
+            }
         }
-        Client.prototype.urlGen = function (route, queryStringParameters) {
-            var _this = this;
+        Client.prototype.redirectUrlGen = function (route, queryStringParameters) {
             if (queryStringParameters === void 0) { queryStringParameters = {}; }
-            var queryParams = (function () {
-                return { email: _this.parameters.email, token: _this.parameters.token };
-            })();
+            var queryParams = {};
             if (typeof queryStringParameters === "string") {
                 queryStringParameters = querystring_1.parse(queryStringParameters);
             }
@@ -271,6 +299,32 @@ var PagSeguro;
                 queryParams = Object.assign(queryParams, queryStringParameters);
             }
             return "" + this.baseUrl + route + "?" + querystring_1.stringify(queryParams);
+        };
+        Client.prototype.urlGen = function (route, queryStringParameters) {
+            var _this = this;
+            if (queryStringParameters === void 0) { queryStringParameters = {}; }
+            var queryParams = (function () {
+                return { email: _this.parameters.email, token: _this.parameters.token };
+            })();
+            if (typeof queryStringParameters === "string") {
+                queryStringParameters = querystring_1.parse(queryStringParameters);
+            }
+            if (typeof queryStringParameters === "object" && !Array.isArray(queryStringParameters)) {
+                var params = route.match(/\:([^\/]+)/g);
+                if (params) {
+                    for (var _i = 0, params_2 = params; _i < params_2.length; _i++) {
+                        var param = params_2[_i];
+                        param = param.substr(1);
+                        route = route.replace(":" + param, queryStringParameters[param]);
+                        delete queryStringParameters[param];
+                    }
+                }
+                queryParams = Object.assign(queryParams, queryStringParameters);
+            }
+            return "" + this.baseUrl + route + "?" + querystring_1.stringify(queryParams);
+        };
+        Client.prototype.scriptUrlGen = function (route) {
+            return "" + this.scriptBaseUrl + route;
         };
         Client.prototype.doRequest = function (method, url, body, cb, contentType, accept) {
             if (contentType === void 0) { contentType = null; }
@@ -383,26 +437,56 @@ var PagSeguro;
                 });
             });
         };
-        Client.prototype.criarTransacao = function (checkout) {
+        Client.prototype.criarTransacao = function (checkout, cb, mode) {
+            if (mode === void 0) { mode = 'redirect'; }
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var url, i, body;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    url = this.urlGen(endPoints.pagamentoAvulso.criarTransacao.url, {});
-                    if (!checkout)
-                        throw new Error('missing argument: checkout');
-                    if (!checkout.sender)
-                        throw new Error('missing property: sender');
-                    if (!checkout.items)
-                        throw new Error('missing property: items');
-                    if (!checkout.currency)
-                        throw new Error('missing property: currency');
-                    if (checkout.items.length === 0)
-                        throw new Error('no items');
-                    if (!checkout.shipping)
-                        throw new Error('missing property: shipping');
-                    if (!checkout.shipping.address && checkout.shipping.addressRequired)
-                        throw new Error('missing adress field');
-                    return [2 /*return*/];
+                    switch (_a.label) {
+                        case 0:
+                            url = this.urlGen(endPoints.pagamentoAvulso.criarTransacao.url, {});
+                            if (!checkout)
+                                throw new Error('missing argument: checkout');
+                            if (!checkout.sender)
+                                throw new Error('missing property: sender');
+                            if (!checkout.items)
+                                throw new Error('missing property: items');
+                            if (!checkout.currency)
+                                throw new Error('missing property: currency');
+                            if (checkout.items.length === 0)
+                                throw new Error('no items');
+                            if (!checkout.shipping)
+                                throw new Error('missing property: shipping');
+                            if (!checkout.shipping.address && checkout.shipping.addressRequired)
+                                throw new Error('missing address field');
+                            for (i = 0; i < checkout.items.length; i++) {
+                                if (typeof checkout.items[i].amount === 'number')
+                                    checkout.items[i].amount = checkout.items[i].amount.toFixed(2);
+                            }
+                            if (typeof checkout.extraAmount === 'number')
+                                checkout.extraAmount = checkout.extraAmount.toFixed(2);
+                            if (typeof checkout.shipping.cost === 'number')
+                                checkout.shipping.cost = checkout.shipping.cost.toFixed(2);
+                            body = "<?xml version=\"1.0\" ?>\n<checkout>\n    <sender>\n        <name>" + checkout.sender.name + "</name>\n        <email>" + checkout.sender.email + "</email>\n        <phone>\n            <areaCode>" + checkout.sender.phone.areaCode + "</areaCode>\n            <number>" + checkout.sender.phone.number + "</number>\n        </phone>\n\t\t<documents>" +
+                                checkout.sender.documents.map(function (doc) { return "\n\t\t\t<document>\n                <type>" + doc.type + "</type>\n                <value>" + doc.value + "</value>\n            </document>"; })
+                                + "\n        </documents>\n    </sender>\n    <currency>BRL</currency>\n    <items>" +
+                                checkout.items.map(function (item) { return "\n        <item>\n            <id>" + item.id + "</id>\n            <description>" + item.description + "</description>\n            <amount>" + item.amount + "</amount>\n            <quantity>" + item.quantity + "</quantity>\n            <weight>" + item.weight + "</weight>\n            " + (item.shippingCost ? "<shippingCost>" + item.shippingCost + "</shippingCost>" : '') + "\n        </item>"; })
+                                + "\n    </items>" + (checkout.redirectURL ? "\n    <redirectURL>" + checkout.redirectURL + "</redirectURL>" : '') + (checkout.notificationURL ? "\n    <notificationURL>" + checkout.notificationURL + "</notificationURL>" : '') + ("\n    <extraAmount>" + checkout.extraAmount + "</extraAmount>\n    <reference>" + checkout.reference + "</reference>\n    <shipping>\n        <address>\n            <street>" + checkout.shipping.address.street + "</street>\n            <number>" + checkout.shipping.address.number + "</number>\n            <complement>" + checkout.shipping.address.complement + "</complement>\n            <district>" + checkout.shipping.address.district + "</district>\n            <city>" + checkout.shipping.address.city + "</city>\n            <state>" + checkout.shipping.address.state + "</state>\n            <country>" + checkout.shipping.address.country + "</country>\n            <postalCode>" + checkout.shipping.address.postalCode + "</postalCode>\n        </address>\n        <type>" + checkout.shipping.type + "</type>\n        <cost>" + checkout.shipping.cost + "</cost>\n        <addressRequired>" + checkout.shipping.addressRequired + "</addressRequired>\n    </shipping>\n    <timeout>" + checkout.timeout + "</timeout>\n    <maxAge>" + checkout.maxAge + "</maxAge>\n    <maxUses>" + checkout.maxUses + "</maxUses>") + (checkout.receiver ? "\n    <receiver>\n        <email>" + checkout.receiver.email + "</email>\n    </receiver>" : '') + ("\n    <enableRecovery>" + (checkout.enableRecovery || false) + "</enableRecovery>") + (checkout.acceptedPaymentMethods && checkout.acceptedPaymentMethods.exclude ? "\n\t<acceptedPaymentMethods>" + (checkout.acceptedPaymentMethods.exclude ? "\n\t\t<exclude>" + (checkout.acceptedPaymentMethods.exclude.map(function (pm) { return "\n\t\t\t<paymentMethod>\n\t\t\t\t<group>" + pm.group + "</group>\n\t\t\t</paymentMethod>"; })) + "\n\t\t</exclude>" : '') + "\n\t</acceptedPaymentMethods>" : '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ? "\n    <paymentMethodConfigs>" + (checkout.paymentMethodConfigs.map(function (pmc) { return "\n        <paymentMethodConfig>\n            <paymentMethod>\n                <group>" + pmc.paymentMethod.group + "</group>\n            </paymentMethod>\n            <configs>" + (pmc.configs.map(function (pmce) { return "\n                <config>\n                    <key>" + pmce.key + "</key>\n                    <value>" + pmce.value + "</value>\n                </config>"; })) + "\n            </configs>\n        </paymentMethodConfig>"; })) + "\n    </paymentMethodConfigs>" : '') + "\n</checkout>";
+                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, function (err, resp) {
+                                    if (err)
+                                        cb(err, resp);
+                                    else {
+                                        resp.checkout.date = new Date(Date.parse(resp.checkout.date));
+                                        if (mode === 'redirect')
+                                            resp.checkout.redirectUrl = _this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
+                                        if (mode === 'lightbox')
+                                            resp.checkout.scriptUrl = _this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
+                                        cb(err, resp);
+                                    }
+                                }, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1')];
+                        case 1: return [2 /*return*/, _a.sent()];
+                    }
                 });
             });
         };

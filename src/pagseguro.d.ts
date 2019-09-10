@@ -13,8 +13,16 @@ export declare namespace constants {
     };
 }
 export declare type Charge = 'AUTO' | 'MANUAL';
+export declare type PagSeguroCheckoutPaymentMethod = 'CREDIT_CARD' | 'BOLETO' | 'DEBITO_ITAU';
 export declare type Period = 'YEARLY' | 'MONTHLY' | 'BIMONTHLY' | 'TRIMONTHLY' | 'SEMIANNUALLY' | 'WEEKLY';
 export declare namespace PagSeguro {
+    interface ICreateTransactionResponse {
+        checkout: ICreateTransactionResponseCheckout;
+    }
+    interface ICreateTransactionResponseCheckout {
+        code: string;
+        date: Date;
+    }
     type PagSeguroCurrency = 'BRL';
     type EnvironmentType = 'production' | 'sandbox';
     /** Must have 2 decimal places: 10.00
@@ -22,6 +30,7 @@ export declare namespace PagSeguro {
      * If data type is 'number': it will be automatically 'fixed' to 2 decimal places
      */
     type PagSeguroAmount = string | number;
+    type PagSeguroCheckoutMode = 'redirect' | 'lightbox';
     interface IParameters {
         environment: string | "sandbox" | "production";
         email: string;
@@ -309,7 +318,7 @@ export declare namespace PagSeguro {
     }
     class PagSeguroCheckoutItem {
         id: string;
-        name: string;
+        description: string;
         amount: PagSeguroAmount;
         quantity: number;
         weight: number;
@@ -324,6 +333,21 @@ export declare namespace PagSeguro {
     }
     class PagSeguroCheckoutReceiver {
         email: string;
+    }
+    class PagSeguroCheckoutAcceptedPaymentMethods {
+        exclude: Array<PagSeguroCheckoutAcceptedPaymentMethod>;
+    }
+    class PagSeguroCheckoutAcceptedPaymentMethod {
+        group: PagSeguroCheckoutPaymentMethod;
+    }
+    class PagSeguroCheckoutPaymentMethodConfig {
+        paymentMethod: PagSeguroCheckoutAcceptedPaymentMethod;
+        configs: Array<PagSeguroCheckoutPaymentMethodConfigEntry>;
+    }
+    type PagSeguroCheckoutPaymentMethodConfigType = 'DISCOUNT_PERCENT' | 'MAX_INSTALLMENTS_NO_INTEREST' | 'MAX_INSTALLMENTS';
+    class PagSeguroCheckoutPaymentMethodConfigEntry {
+        key: PagSeguroCheckoutPaymentMethodConfigType;
+        value: string;
     }
     class PagSeguroCheckout {
         sender: PagSeguroCheckoutSender;
@@ -341,15 +365,21 @@ export declare namespace PagSeguro {
         /** Max Value is: 999 */
         maxUses?: number;
         receiver?: PagSeguroCheckoutReceiver;
+        acceptedPaymentMethods?: PagSeguroCheckoutAcceptedPaymentMethods;
+        paymentMethodConfigs?: Array<PagSeguroCheckoutPaymentMethodConfig>;
+        enableRecovery: boolean;
     }
     class Client {
         private baseUrl;
+        private scriptBaseUrl;
         private parameters;
         constructor(parameters: Parameters);
+        private redirectUrlGen;
         private urlGen;
+        private scriptUrlGen;
         private doRequest;
         sessionId(cb: (err: any, sessionId: string) => any): Promise<any>;
-        criarTransacao(checkout: PagSeguroCheckout): Promise<void>;
+        criarTransacao(checkout: PagSeguroCheckout, cb: (err: any, response: ICreateTransactionResponse) => void, mode?: PagSeguroCheckoutMode): Promise<any>;
         /**
          *
          * @param plano
