@@ -66,7 +66,7 @@ export namespace PagSeguro {
 	type PagSeguroCurrency = 'BRL';
 	type EnvironmentType = 'production' | 'sandbox';
 	/** Must have 2 decimal places: 10.00
-	 * 
+	 *
 	 * If data type is 'number': it will be automatically 'fixed' to 2 decimal places
 	 */
 	type PagSeguroAmount = string | number;
@@ -82,7 +82,7 @@ export namespace PagSeguro {
 	}
 	class Parameters implements IParameters {
 		/** Default: 'sandbox'
-		 * 
+		 *
 		 * Options: 'sandbox' or 'production'
 		 */
 		environment: EnvironmentType = 'sandbox';
@@ -675,15 +675,21 @@ export namespace PagSeguro {
         </paymentMethodConfig>`))+`
     </paymentMethodConfigs>`:'')+`
 </checkout>`;
-			return await this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, (err, resp) => {
-				if (err) cb(err, resp);
+			let response: ICreateTransactionResponse = null;
+			await this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, (err, resp) => {
+				if (err) {
+					if(!cb) throw err;
+					cb(err, resp);
+				}
 				else {
 					resp.checkout.date = new Date(Date.parse(resp.checkout.date));
 					if (mode === 'redirect') resp.checkout.redirectUrl = this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
 					if (mode === 'lightbox') resp.checkout.scriptUrl = this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
-					cb(err, resp);
+					response = resp;
+					if(cb)cb(err, resp);
 				}
 			}, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
+			return response;
 		}
 
 		/**

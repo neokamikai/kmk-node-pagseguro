@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -440,7 +441,7 @@ var PagSeguro;
         Client.prototype.criarTransacao = function (checkout, cb, mode) {
             if (mode === void 0) { mode = 'redirect'; }
             return __awaiter(this, void 0, void 0, function () {
-                var url, i, body;
+                var url, i, body, response;
                 var _this = this;
                 return __generator(this, function (_a) {
                     switch (_a.label) {
@@ -473,19 +474,27 @@ var PagSeguro;
                                 + "\n        </documents>\n    </sender>\n    <currency>BRL</currency>\n    <items>" +
                                 checkout.items.map(function (item) { return "\n        <item>\n            <id>" + item.id + "</id>\n            <description>" + item.description + "</description>\n            <amount>" + item.amount + "</amount>\n            <quantity>" + item.quantity + "</quantity>\n            <weight>" + item.weight + "</weight>\n            " + (item.shippingCost ? "<shippingCost>" + item.shippingCost + "</shippingCost>" : '') + "\n        </item>"; })
                                 + "\n    </items>" + (checkout.redirectURL ? "\n    <redirectURL>" + checkout.redirectURL + "</redirectURL>" : '') + (checkout.notificationURL ? "\n    <notificationURL>" + checkout.notificationURL + "</notificationURL>" : '') + ("\n    <extraAmount>" + checkout.extraAmount + "</extraAmount>\n    <reference>" + checkout.reference + "</reference>\n    <shipping>\n        <address>\n            <street>" + checkout.shipping.address.street + "</street>\n            <number>" + checkout.shipping.address.number + "</number>\n            <complement>" + checkout.shipping.address.complement + "</complement>\n            <district>" + checkout.shipping.address.district + "</district>\n            <city>" + checkout.shipping.address.city + "</city>\n            <state>" + checkout.shipping.address.state + "</state>\n            <country>" + checkout.shipping.address.country + "</country>\n            <postalCode>" + checkout.shipping.address.postalCode + "</postalCode>\n        </address>\n        <type>" + checkout.shipping.type + "</type>\n        <cost>" + checkout.shipping.cost + "</cost>\n        <addressRequired>" + checkout.shipping.addressRequired + "</addressRequired>\n    </shipping>\n    <timeout>" + checkout.timeout + "</timeout>\n    <maxAge>" + checkout.maxAge + "</maxAge>\n    <maxUses>" + checkout.maxUses + "</maxUses>") + (checkout.receiver ? "\n    <receiver>\n        <email>" + checkout.receiver.email + "</email>\n    </receiver>" : '') + ("\n    <enableRecovery>" + (checkout.enableRecovery || false) + "</enableRecovery>") + (checkout.acceptedPaymentMethods && checkout.acceptedPaymentMethods.exclude ? "\n\t<acceptedPaymentMethods>" + (checkout.acceptedPaymentMethods.exclude ? "\n\t\t<exclude>" + (checkout.acceptedPaymentMethods.exclude.map(function (pm) { return "\n\t\t\t<paymentMethod>\n\t\t\t\t<group>" + pm.group + "</group>\n\t\t\t</paymentMethod>"; })) + "\n\t\t</exclude>" : '') + "\n\t</acceptedPaymentMethods>" : '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ? "\n    <paymentMethodConfigs>" + (checkout.paymentMethodConfigs.map(function (pmc) { return "\n        <paymentMethodConfig>\n            <paymentMethod>\n                <group>" + pmc.paymentMethod.group + "</group>\n            </paymentMethod>\n            <configs>" + (pmc.configs.map(function (pmce) { return "\n                <config>\n                    <key>" + pmce.key + "</key>\n                    <value>" + pmce.value + "</value>\n                </config>"; })) + "\n            </configs>\n        </paymentMethodConfig>"; })) + "\n    </paymentMethodConfigs>" : '') + "\n</checkout>";
+                            response = null;
                             return [4 /*yield*/, this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, function (err, resp) {
-                                    if (err)
+                                    if (err) {
+                                        if (!cb)
+                                            throw err;
                                         cb(err, resp);
+                                    }
                                     else {
                                         resp.checkout.date = new Date(Date.parse(resp.checkout.date));
                                         if (mode === 'redirect')
                                             resp.checkout.redirectUrl = _this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
                                         if (mode === 'lightbox')
                                             resp.checkout.scriptUrl = _this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
-                                        cb(err, resp);
+                                        response = resp;
+                                        if (cb)
+                                            cb(err, resp);
                                     }
                                 }, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1')];
-                        case 1: return [2 /*return*/, _a.sent()];
+                        case 1:
+                            _a.sent();
+                            return [2 /*return*/, response];
                     }
                 });
             });

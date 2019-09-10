@@ -31,7 +31,7 @@ export declare namespace PagSeguro {
      */
     type PagSeguroAmount = string | number;
     type PagSeguroCheckoutMode = 'redirect' | 'lightbox';
-    interface IParameters {
+    export interface IParameters {
         environment: string | "sandbox" | "production";
         email: string;
         appKey?: string;
@@ -53,7 +53,7 @@ export declare namespace PagSeguro {
         currency?: "BRL";
         verbose?: boolean;
     }
-    class PagSeguroHolder {
+    export class PagSeguroHolder {
         name: string;
         email: string;
         area_code: string;
@@ -61,13 +61,13 @@ export declare namespace PagSeguro {
         birth_date: string;
     }
     type ExpirationUnit = 'YEARS' | 'MONTHS' | 'DAYS' | 'WEEKS';
-    class PagSeguroPreApprovalRequestDataReceiver {
+    export class PagSeguroPreApprovalRequestDataReceiver {
         /** Especifica o e-mail que deve aparecer na tela de pagamento.
          * Formato: Um e-mail v�lido, com limite de 60 caracteres.
          * O e-mail informado deve estar vinculado � conta PagSeguro que est� realizando a chamada � API. */
         email: string;
     }
-    class PagSeguroPreApprovalRequestDataAuto {
+    export class PagSeguroPreApprovalRequestDataAuto {
         /** REQUIRED
          * Nome/Identificador do plano. Formato: Livre, com limite de 100 caracteres. */
         name: string;
@@ -120,7 +120,7 @@ export declare namespace PagSeguro {
          * */
         receiver?: PagSeguroPreApprovalRequestDataReceiver;
     }
-    class PagSeguroPreApprovalRequestDataExpiration {
+    export class PagSeguroPreApprovalRequestDataExpiration {
         /** REQUIRED
          * Um n�mero inteiro maior ou igual a 1 e menor ou igual a 1000000. */
         value: 0;
@@ -128,7 +128,7 @@ export declare namespace PagSeguro {
          * Combine com value para obter a dura��o da recorr�ncia, ex: 2 YEARS. */
         unit: ExpirationUnit;
     }
-    class PagSeguroPreApprovalRequestDataManual {
+    export class PagSeguroPreApprovalRequestDataManual {
         /** REQUIRED
          * Nome/Identificador do plano. Formato: Livre, com limite de 100 caracteres. */
         name: string;
@@ -234,13 +234,13 @@ export declare namespace PagSeguro {
         receiver?: PagSeguroPreApprovalRequestDataReceiver;
         constructor();
     }
-    class PagSeguroPreApprovalRequest {
+    export class PagSeguroPreApprovalRequest {
         redirectURL: string;
         reference: string;
         preApproval: PagSeguroPreApprovalRequestDataManual | PagSeguroPreApprovalRequestDataAuto;
         constructor(charge: Charge);
     }
-    class PagSeguroAddress {
+    export class PagSeguroAddress {
         street: string;
         number: string;
         complement: string;
@@ -250,17 +250,17 @@ export declare namespace PagSeguro {
         country: string;
         postalCode: string;
     }
-    class PagSeguroPhone {
+    export class PagSeguroPhone {
         areaCode: string;
         number: '';
     }
-    type PagSeguroDocumentType = 'CNPJ' | 'CPF';
-    class PagSeguroDocument {
+    export type PagSeguroDocumentType = 'CNPJ' | 'CPF';
+    export class PagSeguroDocument {
         type: PagSeguroDocumentType;
         value: string;
     }
     /** Dados do Assinante */
-    class PagSeguroPreApprovalSender {
+    export class PagSeguroPreApprovalSender {
         name: string;
         email: string;
         ip: string;
@@ -270,7 +270,7 @@ export declare namespace PagSeguro {
         documents: Array<PagSeguroDocument>;
         constructor();
     }
-    class PagSeguroPaymentMethodCreditCardHolder {
+    export class PagSeguroPaymentMethodCreditCardHolder {
         name: string;
         birthDate: string;
         documents: Array<PagSeguroDocument>;
@@ -278,16 +278,16 @@ export declare namespace PagSeguro {
         billingAddress: PagSeguroAddress;
         constructor();
     }
-    class PagSeguroPaymentMethodCreditCard {
+    export class PagSeguroPaymentMethodCreditCard {
         token: string;
         holder: PagSeguroPaymentMethodCreditCardHolder;
         constructor();
     }
-    class PagSeguroPaymentMethod {
+    export class PagSeguroPaymentMethod {
         type: string;
         credit: PagSeguroPaymentMethodCreditCard;
     }
-    class PagSeguroPreApprovalPaymentItem {
+    export class PagSeguroPreApprovalPaymentItem {
         id: string;
         description: string;
         quantity: number;
@@ -295,7 +295,7 @@ export declare namespace PagSeguro {
         weight: number;
         shippingCost: number;
     }
-    class PagSeguroPreApprovalPayment {
+    export class PagSeguroPreApprovalPayment {
         preApprovalCode: string;
         reference: string;
         senderHash: string;
@@ -303,20 +303,20 @@ export declare namespace PagSeguro {
         items: Array<PagSeguroPreApprovalPaymentItem>;
         constructor();
     }
-    class PagSeguroPreApproval {
+    export class PagSeguroPreApproval {
         plan: string;
         reference: string;
         sender: PagSeguroPreApprovalSender;
         paymentMethod: PagSeguroPaymentMethod;
         constructor();
     }
-    class PagSeguroCheckoutSender {
+    export class PagSeguroCheckoutSender {
         name: string;
         email: string;
         phone: PagSeguroPhone;
         documents: Array<PagSeguroDocument>;
     }
-    class PagSeguroCheckoutItem {
+    export class PagSeguroCheckoutItem {
         id: string;
         description: string;
         amount: PagSeguroAmount;
@@ -325,31 +325,31 @@ export declare namespace PagSeguro {
         shippingCost?: PagSeguroAmount;
     }
     type PagSeguroCheckoutType = 1;
-    class PagSeguroCheckoutShipping {
+    export class PagSeguroCheckoutShipping {
         address: PagSeguroAddress;
         type: PagSeguroCheckoutType;
         cost: PagSeguroAmount;
         addressRequired: boolean;
     }
-    class PagSeguroCheckoutReceiver {
+    export class PagSeguroCheckoutReceiver {
         email: string;
     }
-    class PagSeguroCheckoutAcceptedPaymentMethods {
+    export class PagSeguroCheckoutAcceptedPaymentMethods {
         exclude: Array<PagSeguroCheckoutAcceptedPaymentMethod>;
     }
-    class PagSeguroCheckoutAcceptedPaymentMethod {
+    export class PagSeguroCheckoutAcceptedPaymentMethod {
         group: PagSeguroCheckoutPaymentMethod;
     }
-    class PagSeguroCheckoutPaymentMethodConfig {
+    export class PagSeguroCheckoutPaymentMethodConfig {
         paymentMethod: PagSeguroCheckoutAcceptedPaymentMethod;
         configs: Array<PagSeguroCheckoutPaymentMethodConfigEntry>;
     }
     type PagSeguroCheckoutPaymentMethodConfigType = 'DISCOUNT_PERCENT' | 'MAX_INSTALLMENTS_NO_INTEREST' | 'MAX_INSTALLMENTS';
-    class PagSeguroCheckoutPaymentMethodConfigEntry {
+    export class PagSeguroCheckoutPaymentMethodConfigEntry {
         key: PagSeguroCheckoutPaymentMethodConfigType;
         value: string;
     }
-    class PagSeguroCheckout {
+    export class PagSeguroCheckout {
         sender: PagSeguroCheckoutSender;
         currency: PagSeguroCurrency;
         items: Array<PagSeguroCheckoutItem>;
@@ -369,7 +369,7 @@ export declare namespace PagSeguro {
         paymentMethodConfigs?: Array<PagSeguroCheckoutPaymentMethodConfig>;
         enableRecovery: boolean;
     }
-    class Client {
+    export class Client {
         private baseUrl;
         private scriptBaseUrl;
         private parameters;
@@ -379,7 +379,7 @@ export declare namespace PagSeguro {
         private scriptUrlGen;
         private doRequest;
         sessionId(cb: (err: any, sessionId: string) => any): Promise<any>;
-        criarTransacao(checkout: PagSeguroCheckout, cb: (err: any, response: ICreateTransactionResponse) => void, mode?: PagSeguroCheckoutMode): Promise<any>;
+        criarTransacao(checkout: PagSeguroCheckout, cb: (err: any, response: ICreateTransactionResponse) => void, mode?: PagSeguroCheckoutMode): Promise<ICreateTransactionResponse>;
         /**
          *
          * @param plano
@@ -412,5 +412,6 @@ export declare namespace PagSeguro {
         listarOrdensPagto(cb: any): Promise<any>;
         retentarCobranca(cb: any): Promise<any>;
     }
+    export {};
 }
 //# sourceMappingURL=pagseguro.d.ts.map
