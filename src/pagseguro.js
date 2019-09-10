@@ -274,12 +274,14 @@ var PagSeguro;
     var Client = /** @class */ (function () {
         function Client(parameters) {
             this.baseUrl = "https://ws.sandbox.pagseguro.uol.com.br";
+            this.paymentUrl = "https://sandbox.pagseguro.uol.com.br";
             this.scriptBaseUrl = "https://stc.sandbox.pagseguro.uol.com.br/pagseguro/api";
             this.parameters = { appId: "", appKey: "", currency: "BRL", email: "", environment: "sandbox", token: "", verbose: false };
             this.parameters = parameters;
             if (this.parameters.environment === 'production') {
                 this.baseUrl = 'https://ws.pagseguro.uol.com.br';
                 this.scriptBaseUrl = 'https://stc.pagseguro.uol.com.br/pagseguro/api';
+                this.paymentUrl = 'https://pagseguro.uol.com.br';
             }
         }
         Client.prototype.redirectUrlGen = function (route, queryStringParameters) {
@@ -302,7 +304,7 @@ var PagSeguro;
             }
             return "" + this.baseUrl + route + "?" + querystring_1.stringify(queryParams);
         };
-        Client.prototype.urlGen = function (route, queryStringParameters) {
+        Client.prototype.paymentUrlGen = function (route, queryStringParameters) {
             var _this = this;
             if (queryStringParameters === void 0) { queryStringParameters = {}; }
             var queryParams = (function () {
@@ -316,6 +318,29 @@ var PagSeguro;
                 if (params) {
                     for (var _i = 0, params_2 = params; _i < params_2.length; _i++) {
                         var param = params_2[_i];
+                        param = param.substr(1);
+                        route = route.replace(":" + param, queryStringParameters[param]);
+                        delete queryStringParameters[param];
+                    }
+                }
+                queryParams = Object.assign(queryParams, queryStringParameters);
+            }
+            return "" + this.paymentUrl + route + "?" + querystring_1.stringify(queryParams);
+        };
+        Client.prototype.urlGen = function (route, queryStringParameters) {
+            var _this = this;
+            if (queryStringParameters === void 0) { queryStringParameters = {}; }
+            var queryParams = (function () {
+                return { email: _this.parameters.email, token: _this.parameters.token };
+            })();
+            if (typeof queryStringParameters === "string") {
+                queryStringParameters = querystring_1.parse(queryStringParameters);
+            }
+            if (typeof queryStringParameters === "object" && !Array.isArray(queryStringParameters)) {
+                var params = route.match(/\:([^\/]+)/g);
+                if (params) {
+                    for (var _i = 0, params_3 = params; _i < params_3.length; _i++) {
+                        var param = params_3[_i];
                         param = param.substr(1);
                         route = route.replace(":" + param, queryStringParameters[param]);
                         delete queryStringParameters[param];
@@ -339,28 +364,28 @@ var PagSeguro;
                             if (typeof cb === 'undefined')
                                 cb = function () { };
                             responseHandler = function (err, response, body) {
-                                console.log('[PagSeguro Response] Status:', response.statusCode, response.statusMessage);
-                                console.log('[PagSeguro Response] Content Type:', response.headers["content-type"]);
-                                console.log('[PagSeguro Response] Body:', body);
-                                var fs = require('fs');
-                                fs.writeFileSync('response-body.txt', body);
+                                //console.log('[PagSeguro Response] Status:', response.statusCode, response.statusMessage);
+                                //console.log('[PagSeguro Response] Content Type:', response.headers["content-type"]);
+                                //console.log('[PagSeguro Response] Body:', body);
+                                //const fs = require('fs');
+                                //fs.writeFileSync('response-body.txt', body);
                                 if (body) {
-                                    console.log('[PagSeguro Response] Parsing body...');
+                                    //console.log('[PagSeguro Response] Parsing body...');
                                     try {
                                         body = JSON.parse(body);
-                                        console.log('[PagSeguro Response] JSON Body parsed!');
+                                        //console.log('[PagSeguro Response] JSON Body parsed!');
                                     }
                                     catch (e) {
                                         try {
                                             body = JSON.parse(xmlParser.toJson(body));
-                                            console.log('[PagSeguro Response] XML Body parsed!');
+                                            //console.log('[PagSeguro Response] XML Body parsed!');
                                         }
                                         catch (e) {
                                         }
                                     }
                                 }
                                 if (err) {
-                                    console.log('[PagSeguro Response] Error:', err);
+                                    //console.log('[PagSeguro Response] Error:', err);
                                     return cb(err, body);
                                 }
                                 else if (response.statusCode == 200) {
@@ -369,7 +394,7 @@ var PagSeguro;
                                 else {
                                     try {
                                         if (body) {
-                                            console.log('[PagSeguro Response] Response Body:', body);
+                                            //console.log('[PagSeguro Response] Response Body:', body);
                                             var json = body;
                                             if (json.errors && json.errors.error) {
                                                 return cb(json.errors.error, json);
@@ -387,7 +412,8 @@ var PagSeguro;
                                             }
                                         }
                                         catch (e) {
-                                            console.log(body);
+                                            throw e;
+                                            //console.log(body);
                                         }
                                     }
                                     return cb(body);
@@ -405,14 +431,9 @@ var PagSeguro;
                                 url: url, headers: { accept: 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' }
                             }, responseHandler)];
                         case 2: return [2 /*return*/, _b.sent()];
-                        case 3:
-                            console.log('[PagSeguro Request] URL:', url);
-                            console.log('[PagSeguro Request] Accept:', accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept);
-                            console.log('[PagSeguro Request] Content-Type:', contentType);
-                            console.log('[PagSeguro Request] Body:', body);
-                            return [4 /*yield*/, request.post({
-                                    url: url, body: body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
-                                }, responseHandler)];
+                        case 3: return [4 /*yield*/, request.post({
+                                url: url, body: body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
+                            }, responseHandler)];
                         case 4: return [2 /*return*/, _b.sent()];
                         case 5: return [4 /*yield*/, request.put({
                                 url: url, body: body, headers: { accept: 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1', 'content-type': contentType }
@@ -489,7 +510,7 @@ var PagSeguro;
                                 else {
                                     resp.checkout.date = new Date(Date.parse(resp.checkout.date));
                                     if (mode === 'redirect')
-                                        resp.checkout.redirectUrl = _this.redirectUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
+                                        resp.checkout.redirectUrl = _this.paymentUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
                                     if (mode === 'lightbox')
                                         resp.checkout.scriptUrl = _this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
                                     resolve(resp);
@@ -725,9 +746,10 @@ var PagSeguro;
                             startCreationDate = startCreationDate.toJSON();
                             endCreationDate = endCreationDate.toJSON();
                             url = this.urlGen(endPoints.pagamentoRecorrente.getPlanos.url, { status: status, startCreationDate: startCreationDate, endCreationDate: endCreationDate });
-                            console.log(url);
                             return [4 /*yield*/, this.doRequest('GET', url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
+                        case 1: 
+                        //console.log(url);
+                        return [2 /*return*/, _a.sent()];
                     }
                 });
             });

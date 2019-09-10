@@ -371,10 +371,12 @@ export declare namespace PagSeguro {
     }
     export class Client {
         private baseUrl;
+        private paymentUrl;
         private scriptBaseUrl;
         private parameters;
         constructor(parameters: Parameters);
         private redirectUrlGen;
+        private paymentUrlGen;
         private urlGen;
         private scriptUrlGen;
         private doRequest;
