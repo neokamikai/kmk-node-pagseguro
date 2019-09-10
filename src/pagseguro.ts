@@ -2,6 +2,9 @@ import { stringify as qsStringify, parse as qsParse } from "querystring";
 import * as xmlParser from 'xml2json'
 import * as request from 'request';
 import * as qs from 'qs';
+import {Iconv} from 'iconv';
+import * as removeAccents from 'remove-accents';
+
 const endPoints = {
 	sessionId: { method: 'POST', url: '/v2/sessions' },
 	pagamentoRecorrente: {
@@ -554,6 +557,10 @@ export namespace PagSeguro {
 					}
 				case 'POST':
 					{
+						console.log('[PagSeguro Request] URL:', url);
+						console.log('[PagSeguro Request] Accept:', accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept);
+						console.log('[PagSeguro Request] Content-Type:', contentType);
+						console.log('[PagSeguro Request] Body:', body);
 						return await request.post({
 							url, body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
 						}, responseHandler);
@@ -597,10 +604,10 @@ export namespace PagSeguro {
 				checkout.extraAmount = checkout.extraAmount.toFixed(2);
 			if (typeof checkout.shipping.cost === 'number')
 				checkout.shipping.cost = checkout.shipping.cost.toFixed(2);
-			let body = `<?xml version="1.0" ?>
+			let body = `<?xml version="1.0" encoding="ISO-8859-1" standalone="yes" ?>
 <checkout>
     <sender>
-        <name>${checkout.sender.name}</name>
+        <name>${removeAccents.remove(checkout.sender.name)}</name>
         <email>${checkout.sender.email}</email>
         <phone>
             <areaCode>${checkout.sender.phone.areaCode}</areaCode>
@@ -611,7 +618,7 @@ export namespace PagSeguro {
 			<document>
                 <type>${doc.type}</type>
                 <value>${doc.value}</value>
-            </document>`)
+            </document>`).join('')
 				+ `
         </documents>
     </sender>
@@ -620,12 +627,12 @@ export namespace PagSeguro {
 				checkout.items.map(item => `
         <item>
             <id>${item.id}</id>
-            <description>${item.description}</description>
+            <description>${removeAccents.remove(item.description)}</description>
             <amount>${item.amount}</amount>
             <quantity>${item.quantity}</quantity>
             <weight>${item.weight}</weight>
             `+ (item.shippingCost ? `<shippingCost>${item.shippingCost}</shippingCost>` : '') + `
-        </item>`)
+        </item>`).join('')
 				+ `
     </items>`+ (checkout.redirectURL ? `
     <redirectURL>${checkout.redirectURL}</redirectURL>` : '') + (checkout.notificationURL ? `
@@ -634,13 +641,13 @@ export namespace PagSeguro {
     <reference>${checkout.reference}</reference>
     <shipping>
         <address>
-            <street>${checkout.shipping.address.street}</street>
-            <number>${checkout.shipping.address.number}</number>
-            <complement>${checkout.shipping.address.complement}</complement>
-            <district>${checkout.shipping.address.district}</district>
-            <city>${checkout.shipping.address.city}</city>
-            <state>${checkout.shipping.address.state}</state>
-            <country>${checkout.shipping.address.country}</country>
+            <street>${removeAccents.remove(checkout.shipping.address.street)}</street>
+            <number>${removeAccents.remove(checkout.shipping.address.number)}</number>
+            <complement>${removeAccents.remove(checkout.shipping.address.complement)}</complement>
+            <district>${removeAccents.remove(checkout.shipping.address.district)}</district>
+            <city>${removeAccents.remove(checkout.shipping.address.city)}</city>
+            <state>${removeAccents.remove(checkout.shipping.address.state)}</state>
+            <country>${removeAccents.remove(checkout.shipping.address.country)}</country>
             <postalCode>${checkout.shipping.address.postalCode}</postalCode>
         </address>
         <type>${checkout.shipping.type}</type>
@@ -658,7 +665,7 @@ export namespace PagSeguro {
 		<exclude>`+ (checkout.acceptedPaymentMethods.exclude.map(pm =>`
 			<paymentMethod>
 				<group>${pm.group}</group>
-			</paymentMethod>`))+`
+			</paymentMethod>`).join(''))+`
 		</exclude>`:'')+`
 	</acceptedPaymentMethods>`: '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ?`
     <paymentMethodConfigs>`+ (checkout.paymentMethodConfigs.map(pmc => `
@@ -670,11 +677,12 @@ export namespace PagSeguro {
                 <config>
                     <key>${pmce.key}</key>
                     <value>${pmce.value}</value>
-                </config>`))+`
+                </config>`).join(''))+`
             </configs>
-        </paymentMethodConfig>`))+`
+        </paymentMethodConfig>`).join(''))+`
     </paymentMethodConfigs>`:'')+`
 </checkout>`;
+
 			let response: ICreateTransactionResponse = null;
 			await this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, (err, resp) => {
 				if (err) {
