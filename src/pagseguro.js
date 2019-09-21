@@ -78,6 +78,8 @@ var endPoints = {
         lightboxPayment: { method: 'GET', url: '/v2/checkout/pagseguro.lightbox.js' },
         consultaRetornoTransacao: { method: 'GET', url: '/v3/transactions/notifications/:notificationCode' },
         consultaTransacao: { method: 'GET', url: '/v3/transactions/:transactionCode' },
+        cancelarTransacaoCheckout: { method: 'POST', url: '/v2/transactions/cancels' },
+        estornarTransacaoCheckout: { method: 'POST', url: '/v2/transactions/refunds' },
     }
 };
 var constants;
@@ -555,190 +557,461 @@ var PagSeguro;
                 });
             });
         };
+        Client.prototype.estornarTransacaoParcialCheckout = function (transactionCode, refundValue, callback) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            if (typeof refundValue === 'number')
+                                                refundValue = refundValue.toFixed(2);
+                                            url = this.urlGen(endPoints.pagamentoAvulso.estornarTransacaoCheckout.url, { transactionCode: transactionCode });
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoAvulso.estornarTransacaoCheckout.method, url, {}, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                }, 'application/x-www-form-urlencoded', 'application/xml;charset=ISO-8859-1')];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); })();
+                        })];
+                });
+            });
+        };
+        Client.prototype.estornarTransacaoCheckout = function (transactionCode, callback) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoAvulso.estornarTransacaoCheckout.url, { transactionCode: transactionCode });
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoAvulso.estornarTransacaoCheckout.method, url, {}, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                }, 'application/x-www-form-urlencoded', 'application/xml;charset=ISO-8859-1')];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); })().catch(function (e) { return reject(e); });
+                        })];
+                });
+            });
+        };
+        Client.prototype.cancelarTransacaoCheckout = function (transactionCode, callback) {
+            return __awaiter(this, void 0, void 0, function () {
+                var _this = this;
+                return __generator(this, function (_a) {
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoAvulso.cancelarTransacaoCheckout.url, { transactionCode: transactionCode });
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoAvulso.cancelarTransacaoCheckout.method, url, {}, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                }, 'application/x-www-form-urlencoded', 'application/xml;charset=ISO-8859-1')];
+                                        case 1:
+                                            _a.sent();
+                                            return [2 /*return*/];
+                                    }
+                                });
+                            }); })();
+                        })];
+                });
+            });
+        };
         /**
          *
          * @param plano
-         * @param cb
+         * @param callback
          */
-        Client.prototype.criarPlano = function (plano, cb) {
+        Client.prototype.criarPlano = function (plano, callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url, body;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.criarPlano.url, {});
-                            if (plano.preApproval.charge === constants.PAGESEGURO_PREAPPROVAL_CHARGE.AUTO) {
-                                if (plano.preApproval.maxTotalAmount)
-                                    delete plano.preApproval.maxTotalAmount;
-                                if (plano.preApproval.expiration) {
-                                    if (!plano.preApproval.expiration.unit && !plano.preApproval.expiration.value)
-                                        delete plano.preApproval.expiration;
-                                }
-                                else
-                                    delete plano.preApproval.expiration;
-                                if (!plano.preApproval.maxUses)
-                                    delete plano.preApproval.maxUses;
-                                if (!plano.preApproval.membershipFee)
-                                    delete plano.preApproval.membershipFee;
-                                if (!plano.preApproval.reviewURL)
-                                    delete plano.preApproval.reviewURL;
-                                if (!plano.preApproval.trialPeriodDuration)
-                                    delete plano.preApproval.trialPeriodDuration;
-                            }
-                            if (typeof plano.preApproval.amountPerPayment === 'number')
-                                plano.preApproval.amountPerPayment = (plano.preApproval.amountPerPayment * 1 || 0).toFixed(2);
-                            if (typeof plano.preApproval.membershipFee === 'number')
-                                plano.preApproval.membershipFee = (plano.preApproval.membershipFee * 1 || 0).toFixed(2);
-                            body = JSON.stringify(plano);
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.criarPlano.method, url, body, cb, 'application/json')];
-                        case 1: // xmlParser.toXml({ preApprovalRequest: plano });
-                        return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url, body;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.criarPlano.url, {});
+                                            if (plano.preApproval.charge === constants.PAGESEGURO_PREAPPROVAL_CHARGE.AUTO) {
+                                                if (plano.preApproval.maxTotalAmount)
+                                                    delete plano.preApproval.maxTotalAmount;
+                                                if (plano.preApproval.expiration) {
+                                                    if (!plano.preApproval.expiration.unit && !plano.preApproval.expiration.value)
+                                                        delete plano.preApproval.expiration;
+                                                }
+                                                else
+                                                    delete plano.preApproval.expiration;
+                                                if (!plano.preApproval.maxUses)
+                                                    delete plano.preApproval.maxUses;
+                                                if (!plano.preApproval.membershipFee)
+                                                    delete plano.preApproval.membershipFee;
+                                                if (!plano.preApproval.reviewURL)
+                                                    delete plano.preApproval.reviewURL;
+                                                if (!plano.preApproval.trialPeriodDuration)
+                                                    delete plano.preApproval.trialPeriodDuration;
+                                            }
+                                            if (typeof plano.preApproval.amountPerPayment === 'number')
+                                                plano.preApproval.amountPerPayment = (plano.preApproval.amountPerPayment * 1 || 0).toFixed(2);
+                                            if (typeof plano.preApproval.membershipFee === 'number')
+                                                plano.preApproval.membershipFee = (plano.preApproval.membershipFee * 1 || 0).toFixed(2);
+                                            body = JSON.stringify(plano);
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.criarPlano.method, url, body, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                }, 'application/json')];
+                                        case 1: // xmlParser.toXml({ preApprovalRequest: plano });
+                                        return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
         /**
-         * @param {PagSeguroPreApproval} info
-         * @param {(err, response) => void} cb
+         * @param info
+         * @param callback
          */
-        Client.prototype.aderirPlano = function (info, cb) {
+        Client.prototype.aderirPlano = function (info, callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url, body;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.aderirPlano.url, {});
-                            body = JSON.stringify(info);
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.aderirPlano.method, url, body, cb, 'application/json')];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url, body;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.aderirPlano.url, {});
+                                            body = JSON.stringify(info);
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.aderirPlano.method, url, body, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                }, 'application/json')];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.alterarMeioPagtoPlano = function (cb) {
+        Client.prototype.alterarMeioPagtoPlano = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.alterarStatusAdesao = function (cb) {
+        Client.prototype.alterarStatusAdesao = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.alterarStatusAdesao.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.alterarStatusAdesao.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.alterarStatusAdesao.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.alterarStatusAdesao.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.alterarValorPlano = function (cb) {
+        Client.prototype.alterarValorPlano = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.alterarValorPlano.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.alterarValorPlano.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.alterarValorPlano.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.alterarValorPlano.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.cancelarAdesao = function (cb) {
+        Client.prototype.cancelarAdesao = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.cancelarAdesao.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.cancelarAdesao.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.cancelarAdesao.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.cancelarAdesao.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.cobrancaManual = function (cb) {
+        Client.prototype.cobrancaManual = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.cobrancaManual.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.cobrancaManual.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.cobrancaManual.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.cobrancaManual.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.concederDescontoProxCob = function (cb) {
+        Client.prototype.concederDescontoProxCob = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.concederDescontoProxCob.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.concederDescontoProxCob.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.concederDescontoProxCob.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.concederDescontoProxCob.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.getAdesao = function (cb) {
+        Client.prototype.getAdesao = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.getAdesao.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.getAdesao.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.getAdesao.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.getAdesao.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.getAdesoes = function (cb) {
+        Client.prototype.getAdesoes = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.getAdesoes.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.getAdesoes.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.getAdesoes.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.getAdesoes.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.getNotificacoesRecorrencias = function (cb) {
+        Client.prototype.getNotificacoesRecorrencias = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.getNotificacoes.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.getNotificacoes.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.getNotificacoes.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.getNotificacoes.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
@@ -788,44 +1061,92 @@ var PagSeguro;
             });
         };
         ;
-        Client.prototype.getRecorrenciaPorNotificacao = function (cb) {
+        Client.prototype.getRecorrenciaPorNotificacao = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.getRecorrenciaPorNotificacao.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.getRecorrenciaPorNotificacao.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.getRecorrenciaPorNotificacao.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.getRecorrenciaPorNotificacao.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.listarOrdensPagto = function (cb) {
+        Client.prototype.listarOrdensPagto = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.listarOrdensPagto.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.listarOrdensPagto.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.listarOrdensPagto.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.listarOrdensPagto.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };
         ;
-        Client.prototype.retentarCobranca = function (cb) {
+        Client.prototype.retentarCobranca = function (callback) {
             return __awaiter(this, void 0, void 0, function () {
-                var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            url = this.urlGen(endPoints.pagamentoRecorrente.retentarCobranca.url, {});
-                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.retentarCobranca.method, url, null, cb)];
-                        case 1: return [2 /*return*/, _a.sent()];
-                    }
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                var url;
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0:
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.retentarCobranca.url, {});
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.retentarCobranca.method, url, null, function (err, resp) {
+                                                    if (callback)
+                                                        callback(err, resp);
+                                                    if (err) {
+                                                        reject(err);
+                                                    }
+                                                    else {
+                                                        resolve(resp);
+                                                    }
+                                                })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };

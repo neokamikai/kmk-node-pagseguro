@@ -1,4 +1,4 @@
-const {PagSeguro} = require('../');
+const { PagSeguro } = require('../');
 
 let credentials = require('./credentials.json');
 let client = new PagSeguro.Client(credentials);
@@ -10,18 +10,18 @@ stdin.on('data', e => {
 	if (!txt) return;
 	let cmd = txt.split(/\s/)[0];
 	switch (cmd) {
-		case 'consulta-retorno-transacao':{
+		case 'consulta-retorno-transacao': {
 			let code = txt.split(/\s/)[1];
-			if(!code) return console.log('Código de transação não informado!');
+			if (!code) return console.log('Código de transação não informado!');
 			client.consultaRetornoTransacaoCheckout(code, (err, resp) => {
-				if(err){
-					console.error('Error:',err);
+				if (err) {
+					console.error('Error:', err);
 				}
 				else {
 					console.log(resp.transaction);
 				}
-			}).catch(() => {});
-		}break;
+			}).catch(() => { });
+		} break;
 		case 'criar-transacao': {
 			client.criarTransacao({
 				currency: "BRL",
@@ -47,8 +47,8 @@ stdin.on('data', e => {
 					name: 'Jose Comprador',
 					email: 'comprador@uol.com.br',
 					phone: {
-						areaCode:'99',
-						number:'999999999'
+						areaCode: '99',
+						number: '999999999'
 					},
 					documents: [
 						{
@@ -77,15 +77,67 @@ stdin.on('data', e => {
 				extraAmount: '0.00',
 				reference: 'TESTE'
 			}, (err, resp) => {
-					if (err) {
-						console.log('Error:', err);
-					}
-					else {
-						console.log('Success!', resp);
-					}
+				if (err) {
+					console.log('Error:', err);
+				}
+				else {
+					console.log('Success!', resp);
+				}
 			});
-		}break;
+		} break;
+		case 'aderir': {
+			client.aderirPlano({
+				plan:'',
+				reference:'',
+				paymentMethod: {
+					type:'CREDIT_CARD',
+					credit: {
+						token:'',
+						holder: {
+							billingAddress: {
+								street: '',
+								number: '',
+								complement: '',
+								district: '',
+								postalCode: '',
+								city: '',
+								state: '',
+								country: 'BRA',
+							},
+							birthDate: null,
+							documents: [{ type: 'CNPJ', value: '' }],
+							name: '',
+							phone: {
+								areaCode: '',
+								number: ''
+							}
+						}
+					}
+				},
+				sender:{
+					name:'',
+					phone:{
+						areaCode:'', number:''
+					},
+					email:'',
+					hash:'',
+					documents:[{
+						type:'CNPJ', value:''
+					}],
+					address:{
+						street:'',
+						number:'',
+						complement:'',
+						district:'',
+						city:'',
+						state:'',
+						postalCode:'',
+						country:''
+					}
+				}
+			});
+		} break;
 		default:
-			console.log('unknown command:',cmd);
+			console.log('unknown command:', cmd);
 	}
 });

@@ -1,6 +1,6 @@
 {
 	"name": "kmk-node-pagseguro",
-	"version": "0.0.8",
+	"version": "0.0.10",
 	"description": "",
 	"main": "index.js",
 	"scripts": {
@@ -32,7 +32,6 @@
 	"dependencies": {
 		"@types/node": "^12.6.8",
 		"@types/xml2json": "^0.10.0",
-		"iconv": "^2.3.4",
 		"qs": "^6.8.0",
 		"querystring": "^0.2.0",
 		"remove-accents": "^0.4.2",

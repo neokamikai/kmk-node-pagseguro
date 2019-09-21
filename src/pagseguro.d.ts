@@ -52,6 +52,10 @@ export declare namespace PagSeguro {
     interface IGetCheckoutTransactionResponse {
         transaction: ITransactionObject;
     }
+    interface IRefundCheckoutTransactionResponse {
+    }
+    interface ICancelCheckoutTransactionResponse {
+    }
     type PagSeguroCurrency = 'BRL';
     type EnvironmentType = 'production' | 'sandbox';
     /** Must have 2 decimal places: 10.00
@@ -313,7 +317,7 @@ export declare namespace PagSeguro {
         constructor();
     }
     export class PagSeguroPaymentMethod {
-        type: string;
+        type: PagSeguroCheckoutPaymentMethod;
         credit: PagSeguroPaymentMethodCreditCard;
     }
     export class PagSeguroPreApprovalPaymentItem {
@@ -412,26 +416,29 @@ export declare namespace PagSeguro {
         sessionId(cb: (err: any, sessionId: string) => any): Promise<any>;
         criarTransacao(checkout: PagSeguroCheckout, callback?: (err: any, response: ICreateTransactionResponse) => void, mode?: PagSeguroCheckoutMode): Promise<ICreateTransactionResponse>;
         consultaRetornoTransacaoCheckout(notificationCode: string, callback?: (err: any, response: IGetCheckoutTransactionResponse) => void): Promise<IGetCheckoutTransactionResponse>;
+        estornarTransacaoParcialCheckout(transactionCode: string, refundValue: PagSeguroAmount, callback?: (err: any, response: IRefundCheckoutTransactionResponse) => void): Promise<IRefundCheckoutTransactionResponse>;
+        estornarTransacaoCheckout(transactionCode: string, callback?: (err: any, response: IRefundCheckoutTransactionResponse) => void): Promise<IRefundCheckoutTransactionResponse>;
+        cancelarTransacaoCheckout(transactionCode: string, callback?: (err: any, response: ICancelCheckoutTransactionResponse) => void): Promise<ICancelCheckoutTransactionResponse>;
         /**
          *
          * @param plano
-         * @param cb
+         * @param callback
          */
-        criarPlano(plano: PagSeguroPreApprovalRequest, cb: (err: any, response: any) => void): Promise<any>;
+        criarPlano(plano: PagSeguroPreApprovalRequest, callback?: (err: any, response: any) => void): Promise<unknown>;
         /**
-         * @param {PagSeguroPreApproval} info
-         * @param {(err, response) => void} cb
+         * @param info
+         * @param callback
          */
-        aderirPlano(info: any, cb: any): Promise<any>;
-        alterarMeioPagtoPlano(cb: any): Promise<any>;
-        alterarStatusAdesao(cb: any): Promise<any>;
-        alterarValorPlano(cb: any): Promise<any>;
-        cancelarAdesao(cb: any): Promise<any>;
-        cobrancaManual(cb: any): Promise<any>;
-        concederDescontoProxCob(cb: any): Promise<any>;
-        getAdesao(cb: any): Promise<any>;
-        getAdesoes(cb: any): Promise<any>;
-        getNotificacoesRecorrencias(cb: any): Promise<any>;
+        aderirPlano(info: PagSeguroPreApproval, callback?: (err: any, response: any) => void): Promise<any>;
+        alterarMeioPagtoPlano(callback?: (err: any, response: any) => void): Promise<unknown>;
+        alterarStatusAdesao(callback?: (err: any, response: any) => void): Promise<unknown>;
+        alterarValorPlano(callback?: (err: any, response: any) => void): Promise<unknown>;
+        cancelarAdesao(callback?: (err: any, response: any) => void): Promise<unknown>;
+        cobrancaManual(callback?: (err: any, response: any) => void): Promise<unknown>;
+        concederDescontoProxCob(callback?: (err: any, response: any) => void): Promise<unknown>;
+        getAdesao(callback?: (err: any, response: any) => void): Promise<unknown>;
+        getAdesoes(callback?: (err: any, response: any) => void): Promise<unknown>;
+        getNotificacoesRecorrencias(callback?: (err: any, response: any) => void): Promise<unknown>;
         /**
          *
          * @param {'ACTIVE' | 'INACTIVE'} status Default: ACTIVE
@@ -440,9 +447,9 @@ export declare namespace PagSeguro {
          * @param {(err: any, responseBody: any) => void} cb
          */
         getPlanos(status: any, startCreationDate: any, endCreationDate: any, cb: any): Promise<any>;
-        getRecorrenciaPorNotificacao(cb: any): Promise<any>;
-        listarOrdensPagto(cb: any): Promise<any>;
-        retentarCobranca(cb: any): Promise<any>;
+        getRecorrenciaPorNotificacao(callback?: (err: any, response: any) => void): Promise<unknown>;
+        listarOrdensPagto(callback?: (err: any, response: any) => void): Promise<unknown>;
+        retentarCobranca(callback?: (err: any, response: any) => void): Promise<unknown>;
     }
     export {};
 }

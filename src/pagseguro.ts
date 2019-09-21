@@ -2,7 +2,6 @@ import { stringify as qsStringify, parse as qsParse } from "querystring";
 import * as xmlParser from 'xml2json'
 import * as request from 'request';
 import * as qs from 'qs';
-import {Iconv} from 'iconv';
 import * as removeAccents from 'remove-accents';
 
 const endPoints = {
@@ -42,8 +41,11 @@ const endPoints = {
 		criarTransacao: { method: 'POST', url: '/v2/checkout' },
 		redirectToPayment: { method: 'GET', url: '/v2/checkout/payment.html' },
 		lightboxPayment: { method: 'GET', url: '/v2/checkout/pagseguro.lightbox.js' },
-		consultaRetornoTransacao: { method: 'GET', url:'/v3/transactions/notifications/:notificationCode'},
-		consultaTransacao: { method: 'GET', url:'/v3/transactions/:transactionCode'},
+		consultaRetornoTransacao: { method: 'GET', url: '/v3/transactions/notifications/:notificationCode' },
+		consultaTransacao: { method: 'GET', url: '/v3/transactions/:transactionCode' },
+		cancelarTransacaoCheckout: { method: 'POST', url: '/v2/transactions/cancels' },
+		estornarTransacaoCheckout: { method: 'POST', url: '/v2/transactions/refunds' },
+
 
 	}
 };
@@ -58,7 +60,7 @@ export namespace constants {
 
 }
 export type Charge = 'AUTO' | 'MANUAL';
-export type PagSeguroCheckoutPaymentMethod = 'CREDIT_CARD' | 'BOLETO' |'DEBITO_ITAU';
+export type PagSeguroCheckoutPaymentMethod = 'CREDIT_CARD' | 'BOLETO' | 'DEBITO_ITAU';
 export type Period = 'YEARLY' | 'MONTHLY' | 'BIMONTHLY' | 'TRIMONTHLY' | 'SEMIANNUALLY' | 'WEEKLY'
 export namespace PagSeguro {
 
@@ -82,7 +84,7 @@ export namespace PagSeguro {
 		code: string;
 		reference: string;
 		type: number;
-		status:number;
+		status: number;
 		paymentMethod: ITransactionObjectPaymentMethod;
 		grossAmount: PagSeguroAmount;
 		discountAmount: PagSeguroAmount;
@@ -98,6 +100,8 @@ export namespace PagSeguro {
 	interface IGetCheckoutTransactionResponse {
 		transaction: ITransactionObject
 	}
+	interface IRefundCheckoutTransactionResponse { }
+	interface ICancelCheckoutTransactionResponse { }
 	type PagSeguroCurrency = 'BRL';
 	type EnvironmentType = 'production' | 'sandbox';
 	/** Must have 2 decimal places: 10.00
@@ -383,7 +387,7 @@ export namespace PagSeguro {
 		}
 	}
 	export class PagSeguroPaymentMethod {
-		type: string;
+		type: PagSeguroCheckoutPaymentMethod;
 		credit: PagSeguroPaymentMethodCreditCard;
 	}
 	export class PagSeguroPreApprovalPaymentItem {
@@ -709,33 +713,33 @@ export namespace PagSeguro {
     <receiver>
         <email>${checkout.receiver.email}</email>
     </receiver>`: '') + `
-    <enableRecovery>${checkout.enableRecovery || false}</enableRecovery>` + (checkout.acceptedPaymentMethods && checkout.acceptedPaymentMethods.exclude ?`
-	<acceptedPaymentMethods>`+ (checkout.acceptedPaymentMethods.exclude ?`
-		<exclude>`+ (checkout.acceptedPaymentMethods.exclude.map(pm =>`
+    <enableRecovery>${checkout.enableRecovery || false}</enableRecovery>` + (checkout.acceptedPaymentMethods && checkout.acceptedPaymentMethods.exclude ? `
+	<acceptedPaymentMethods>`+ (checkout.acceptedPaymentMethods.exclude ? `
+		<exclude>`+ (checkout.acceptedPaymentMethods.exclude.map(pm => `
 			<paymentMethod>
 				<group>${pm.group}</group>
-			</paymentMethod>`).join(''))+`
-		</exclude>`:'')+`
-	</acceptedPaymentMethods>`: '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ?`
+			</paymentMethod>`).join('')) + `
+		</exclude>`: '') + `
+	</acceptedPaymentMethods>`: '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ? `
     <paymentMethodConfigs>`+ (checkout.paymentMethodConfigs.map(pmc => `
         <paymentMethodConfig>
             <paymentMethod>
                 <group>${pmc.paymentMethod.group}</group>
             </paymentMethod>
-            <configs>`+(pmc.configs.map(pmce => `
+            <configs>`+ (pmc.configs.map(pmce => `
                 <config>
                     <key>${pmce.key}</key>
                     <value>${pmce.value}</value>
-                </config>`).join(''))+`
+                </config>`).join('')) + `
             </configs>
-        </paymentMethodConfig>`).join(''))+`
-    </paymentMethodConfigs>`:'')+`
+        </paymentMethodConfig>`).join('')) + `
+    </paymentMethodConfigs>`: '') + `
 </checkout>`;
 
 			return new Promise<ICreateTransactionResponse>((resolve, reject) => {
 				this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, (err, resp) => {
 					if (err) {
-						if(callback) callback(err, resp);
+						if (callback) callback(err, resp);
 						else reject(err);
 
 					}
@@ -744,21 +748,21 @@ export namespace PagSeguro {
 						if (mode === 'redirect') resp.checkout.redirectUrl = this.paymentUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
 						if (mode === 'lightbox') resp.checkout.scriptUrl = this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
 						resolve(resp);
-						if(callback)callback(err, resp);
+						if (callback) callback(err, resp);
 					}
 				}, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
 			});
 		}
-		async consultaRetornoTransacaoCheckout(notificationCode: string, callback?:(err, response: IGetCheckoutTransactionResponse) => void){
+		async consultaRetornoTransacaoCheckout(notificationCode: string, callback?: (err, response: IGetCheckoutTransactionResponse) => void) {
 			return new Promise<IGetCheckoutTransactionResponse>((resolve, reject) => {
-				(async ()=>{
+				(async () => {
 					const url = this.urlGen(endPoints.pagamentoAvulso.consultaRetornoTransacao.url, { notificationCode });
 					await this.doRequest(endPoints.pagamentoAvulso.consultaRetornoTransacao.method, url, {}, (err, resp) => {
-						if(callback) callback(err, resp);
-						if(err){
+						if (callback) callback(err, resp);
+						if (err) {
 							reject(err);
 						}
-						else{
+						else {
 							resolve(resp);
 						}
 					}, 'application/x-www-form-urlencoded', 'application/xml;charset=ISO-8859-1');
@@ -766,75 +770,269 @@ export namespace PagSeguro {
 				})();
 			});
 		}
+		async estornarTransacaoParcialCheckout(transactionCode: string, refundValue: PagSeguroAmount, callback?: (err, response: IRefundCheckoutTransactionResponse) => void) {
+			return new Promise<IRefundCheckoutTransactionResponse>((resolve, reject) => {
+				(async () => {
+					if (typeof refundValue === 'number') refundValue = refundValue.toFixed(2);
+					const url = this.urlGen(endPoints.pagamentoAvulso.estornarTransacaoCheckout.url, { transactionCode });
+					await this.doRequest(endPoints.pagamentoAvulso.estornarTransacaoCheckout.method, url, {}, (err, resp) => {
+						if (callback) callback(err, resp);
+						if (err) {
+							reject(err);
+						}
+						else {
+							resolve(resp);
+						}
+					}, 'application/x-www-form-urlencoded', 'application/xml;charset=ISO-8859-1');
+				})();
+			});
+		}
+		async estornarTransacaoCheckout(transactionCode: string, callback?: (err, response: IRefundCheckoutTransactionResponse) => void) {
+			return new Promise<IRefundCheckoutTransactionResponse>((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoAvulso.estornarTransacaoCheckout.url, { transactionCode });
+					await this.doRequest(endPoints.pagamentoAvulso.estornarTransacaoCheckout.method, url, {}, (err, resp) => {
+						if (callback) callback(err, resp);
+						if (err) {
+							reject(err);
+						}
+						else {
+							resolve(resp);
+						}
+					}, 'application/x-www-form-urlencoded', 'application/xml;charset=ISO-8859-1');
+				})().catch(e => reject(e));
+			});
+		}
+		async cancelarTransacaoCheckout(transactionCode: string, callback?: (err, response: ICancelCheckoutTransactionResponse) => void) {
+			return new Promise<ICancelCheckoutTransactionResponse>((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoAvulso.cancelarTransacaoCheckout.url, { transactionCode });
+					await this.doRequest(endPoints.pagamentoAvulso.cancelarTransacaoCheckout.method, url, {},
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						}, 'application/x-www-form-urlencoded', 'application/xml;charset=ISO-8859-1');
+				})();
+			});
+		}
 		/**
 		 *
 		 * @param plano
-		 * @param cb
+		 * @param callback
 		 */
-		async criarPlano(plano: PagSeguroPreApprovalRequest, cb: (err, response) => void) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.criarPlano.url, {});
-			if (plano.preApproval.charge === constants.PAGESEGURO_PREAPPROVAL_CHARGE.AUTO) {
-				if (plano.preApproval.maxTotalAmount) delete plano.preApproval.maxTotalAmount;
-				if (plano.preApproval.expiration) {
-					if (!plano.preApproval.expiration.unit && !plano.preApproval.expiration.value) delete plano.preApproval.expiration;
-				}
-				else delete plano.preApproval.expiration;
-				if (!plano.preApproval.maxUses) delete plano.preApproval.maxUses;
-				if (!plano.preApproval.membershipFee) delete plano.preApproval.membershipFee;
-				if (!plano.preApproval.reviewURL) delete plano.preApproval.reviewURL;
-				if (!plano.preApproval.trialPeriodDuration) delete plano.preApproval.trialPeriodDuration;
-			}
-			if (typeof plano.preApproval.amountPerPayment === 'number')
-				plano.preApproval.amountPerPayment = (plano.preApproval.amountPerPayment * 1 || 0).toFixed(2);
-			if (typeof plano.preApproval.membershipFee === 'number') plano.preApproval.membershipFee = (plano.preApproval.membershipFee * 1 || 0).toFixed(2);
-			var body = JSON.stringify(plano);// xmlParser.toXml({ preApprovalRequest: plano });
-			return await this.doRequest(endPoints.pagamentoRecorrente.criarPlano.method, url, body, cb, 'application/json');
+		async criarPlano(plano: PagSeguroPreApprovalRequest, callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.criarPlano.url, {});
+					if (plano.preApproval.charge === constants.PAGESEGURO_PREAPPROVAL_CHARGE.AUTO) {
+						if (plano.preApproval.maxTotalAmount) delete plano.preApproval.maxTotalAmount;
+						if (plano.preApproval.expiration) {
+							if (!plano.preApproval.expiration.unit && !plano.preApproval.expiration.value) delete plano.preApproval.expiration;
+						}
+						else delete plano.preApproval.expiration;
+						if (!plano.preApproval.maxUses) delete plano.preApproval.maxUses;
+						if (!plano.preApproval.membershipFee) delete plano.preApproval.membershipFee;
+						if (!plano.preApproval.reviewURL) delete plano.preApproval.reviewURL;
+						if (!plano.preApproval.trialPeriodDuration) delete plano.preApproval.trialPeriodDuration;
+					}
+					if (typeof plano.preApproval.amountPerPayment === 'number')
+						plano.preApproval.amountPerPayment = (plano.preApproval.amountPerPayment * 1 || 0).toFixed(2);
+					if (typeof plano.preApproval.membershipFee === 'number') plano.preApproval.membershipFee = (plano.preApproval.membershipFee * 1 || 0).toFixed(2);
+					var body = JSON.stringify(plano);// xmlParser.toXml({ preApprovalRequest: plano });
+					return await this.doRequest(endPoints.pagamentoRecorrente.criarPlano.method, url, body,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						}
+						, 'application/json');
+				})();
+			});
 		};
 		/**
-		 * @param {PagSeguroPreApproval} info
-		 * @param {(err, response) => void} cb
+		 * @param info
+		 * @param callback
 		 */
-		async aderirPlano(info, cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.aderirPlano.url, {});
-			var body = JSON.stringify(info);
-			return await this.doRequest(endPoints.pagamentoRecorrente.aderirPlano.method, url, body, cb, 'application/json');
+		async aderirPlano(info: PagSeguroPreApproval, callback?: (err, response) => void) {
+			return new Promise<any>((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.aderirPlano.url, {});
+					var body = JSON.stringify(info);
+					return await this.doRequest(endPoints.pagamentoRecorrente.aderirPlano.method, url, body,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						}
+						, 'application/json');
+				})();
+			});
 		};
 
-		async alterarMeioPagtoPlano(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.method, url, null, cb);
+		async alterarMeioPagtoPlano(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.method, url, null, (err, resp) => {
+						if (callback) callback(err, resp);
+						if (err) {
+							reject(err);
+						}
+						else {
+							resolve(resp);
+						}
+					});
+				})();
+			});
 		};
-		async alterarStatusAdesao(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.alterarStatusAdesao.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.alterarStatusAdesao.method, url, null, cb);
+		async alterarStatusAdesao(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.alterarStatusAdesao.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.alterarStatusAdesao.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
-		async alterarValorPlano(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.alterarValorPlano.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.alterarValorPlano.method, url, null, cb);
+		async alterarValorPlano(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.alterarValorPlano.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.alterarValorPlano.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
-		async cancelarAdesao(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.cancelarAdesao.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.cancelarAdesao.method, url, null, cb);
+		async cancelarAdesao(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.cancelarAdesao.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.cancelarAdesao.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
-		async cobrancaManual(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.cobrancaManual.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.cobrancaManual.method, url, null, cb);
+		async cobrancaManual(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.cobrancaManual.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.cobrancaManual.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
-		async concederDescontoProxCob(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.concederDescontoProxCob.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.concederDescontoProxCob.method, url, null, cb);
+		async concederDescontoProxCob(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.concederDescontoProxCob.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.concederDescontoProxCob.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
-		async getAdesao(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.getAdesao.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.getAdesao.method, url, null, cb);
+		async getAdesao(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.getAdesao.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.getAdesao.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
-		async getAdesoes(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.getAdesoes.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.getAdesoes.method, url, null, cb);
+		async getAdesoes(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.getAdesoes.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.getAdesoes.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
-		async getNotificacoesRecorrencias(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.getNotificacoes.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.getNotificacoes.method, url, null, cb);
+		async getNotificacoesRecorrencias(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.getNotificacoes.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.getNotificacoes.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
 		/**
 		 *
@@ -866,17 +1064,56 @@ export namespace PagSeguro {
 			return await this.doRequest('GET', url, null, cb);
 		};
 
-		async getRecorrenciaPorNotificacao(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.getRecorrenciaPorNotificacao.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.getRecorrenciaPorNotificacao.method, url, null, cb);
+		async getRecorrenciaPorNotificacao(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.getRecorrenciaPorNotificacao.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.getRecorrenciaPorNotificacao.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
-		async listarOrdensPagto(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.listarOrdensPagto.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.listarOrdensPagto.method, url, null, cb);
+		async listarOrdensPagto(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.listarOrdensPagto.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.listarOrdensPagto.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
-		async retentarCobranca(cb) {
-			const url = this.urlGen(endPoints.pagamentoRecorrente.retentarCobranca.url, {});
-			return await this.doRequest(endPoints.pagamentoRecorrente.retentarCobranca.method, url, null, cb);
+		async retentarCobranca(callback?: (err, response) => void) {
+			return new Promise((resolve, reject) => {
+				(async () => {
+					const url = this.urlGen(endPoints.pagamentoRecorrente.retentarCobranca.url, {});
+					return await this.doRequest(endPoints.pagamentoRecorrente.retentarCobranca.method, url, null,
+						(err, resp) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resolve(resp);
+							}
+						});
+				})();
+			});
 		};
 	}
 }
