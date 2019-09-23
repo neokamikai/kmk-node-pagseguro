@@ -118,7 +118,7 @@ var PagSeguro;
     var PagSeguroPreApprovalRequestDataAuto = /** @class */ (function () {
         function PagSeguroPreApprovalRequestDataAuto() {
             /** REQUIRED
-             * Indica o modelo de cobran�a do pagamento recorrente pr�-pago (AUTO) */
+             * Indica o modelo de cobrança do pagamento recorrente pré-pago (AUTO) */
             this.charge = 'AUTO';
         }
         return PagSeguroPreApprovalRequestDataAuto;
@@ -133,7 +133,7 @@ var PagSeguro;
     var PagSeguroPreApprovalRequestDataManual = /** @class */ (function () {
         function PagSeguroPreApprovalRequestDataManual() {
             /** REQUIRED
-             * Indica o modelo de cobran�a do pagamento recorrente p�s-pago (MANUAL).*/
+             * Indica o modelo de cobrança do pagamento recorrente pós-pago (MANUAL).*/
             this.charge = 'MANUAL';
             this.membershipFee = 0;
         }
@@ -698,6 +698,7 @@ var PagSeguro;
                                                         reject(err);
                                                     }
                                                     else {
+                                                        resp.date = new Date(Date.parse(resp.date));
                                                         resolve(resp);
                                                     }
                                                 }, 'application/json')];
@@ -734,6 +735,7 @@ var PagSeguro;
                                                         reject(err);
                                                     }
                                                     else {
+                                                        resp.date = new Date(Date.parse(resp.date));
                                                         resolve(resp);
                                                     }
                                                 }, 'application/json')];
@@ -1018,45 +1020,78 @@ var PagSeguro;
         ;
         /**
          *
-         * @param {'ACTIVE' | 'INACTIVE'} status Default: ACTIVE
-         * @param {Date} startCreationDate Default: Today
-         * @param {Date} endCreationDate Default: Today
-         * @param {(err: any, responseBody: any) => void} cb
+         * @param status Default: ACTIVE
+         * @param startCreationDate Default: Today
+         * @param endCreationDate Default: Today
+         * @param callback
          */
-        Client.prototype.getPlanos = function (status, startCreationDate, endCreationDate, cb) {
+        Client.prototype.getPlanos = function (status, startCreationDate, endCreationDate, callback) {
             return __awaiter(this, void 0, void 0, function () {
                 var url;
+                var _this = this;
                 return __generator(this, function (_a) {
-                    switch (_a.label) {
-                        case 0:
-                            if (typeof status === 'undefined')
-                                status = 'ACTIVE';
-                            if (typeof startCreationDate === 'undefined') {
-                                startCreationDate = new Date();
-                                startCreationDate.setHours(0);
-                                startCreationDate.setMinutes(0);
-                                startCreationDate.setSeconds(0);
-                                startCreationDate.setMilliseconds(0);
-                            }
-                            if (typeof endCreationDate === 'undefined') {
-                                endCreationDate = new Date();
-                            }
-                            if (typeof startCreationDate === 'number')
-                                startCreationDate = new Date(startCreationDate);
-                            if (typeof endCreationDate === 'number')
-                                endCreationDate = new Date(endCreationDate);
-                            if ((startCreationDate.__proto__.constructor.name).toLocaleLowerCase() !== 'date')
-                                throw new Error("'startCreationDate' parameter is invalid");
-                            if ((endCreationDate.__proto__.constructor.name).toLocaleLowerCase() !== 'date')
-                                throw new Error("'endCreationDate' parameter is invalid");
-                            startCreationDate = startCreationDate.toJSON();
-                            endCreationDate = endCreationDate.toJSON();
-                            url = this.urlGen(endPoints.pagamentoRecorrente.getPlanos.url, { status: status, startCreationDate: startCreationDate, endCreationDate: endCreationDate });
-                            return [4 /*yield*/, this.doRequest('GET', url, null, cb)];
-                        case 1: 
-                        //console.log(url);
-                        return [2 /*return*/, _a.sent()];
+                    if (typeof status === 'undefined')
+                        status = 'ACTIVE';
+                    if (typeof startCreationDate === 'undefined') {
+                        startCreationDate = new Date();
+                        startCreationDate.setHours(0);
+                        startCreationDate.setMinutes(0);
+                        startCreationDate.setSeconds(0);
+                        startCreationDate.setMilliseconds(0);
                     }
+                    else if (typeof startCreationDate === 'number') {
+                        startCreationDate = new Date(startCreationDate);
+                    }
+                    else if (typeof startCreationDate === 'string') {
+                        startCreationDate = new Date(Date.parse(startCreationDate));
+                    }
+                    if (typeof endCreationDate === 'undefined') {
+                        endCreationDate = new Date();
+                    }
+                    else if (typeof endCreationDate === 'number') {
+                        endCreationDate = new Date(endCreationDate);
+                    }
+                    else if (typeof endCreationDate === 'string') {
+                        endCreationDate = new Date(Date.parse(endCreationDate));
+                    }
+                    if ((Object.getPrototypeOf(startCreationDate).constructor.name).toLocaleLowerCase() !== 'date')
+                        throw new Error("'startCreationDate' parameter is invalid");
+                    if ((Object.getPrototypeOf(endCreationDate).constructor.name).toLocaleLowerCase() !== 'date')
+                        throw new Error("'endCreationDate' parameter is invalid");
+                    startCreationDate = startCreationDate.toJSON();
+                    endCreationDate = endCreationDate.toJSON();
+                    url = this.urlGen(endPoints.pagamentoRecorrente.getPlanos.url, { status: status, startCreationDate: startCreationDate, endCreationDate: endCreationDate });
+                    //console.log(url);
+                    return [2 /*return*/, new Promise(function (resolve, reject) {
+                            (function () { return __awaiter(_this, void 0, void 0, function () {
+                                return __generator(this, function (_a) {
+                                    switch (_a.label) {
+                                        case 0: return [4 /*yield*/, this.doRequest('GET', url, null, function (err, resp) {
+                                                if (callback)
+                                                    callback(err, resp);
+                                                if (err) {
+                                                    reject(err);
+                                                }
+                                                else {
+                                                    resp.date = new Date(Date.parse(resp.date));
+                                                    resp.preApprovalRequest = resp.preApprovalRequest.map(function (v) {
+                                                        v.creationDate = new Date(Date.parse(v.creationDate));
+                                                        if (typeof v.amountPerPayment === 'string')
+                                                            v.amountPerPayment = parseFloat(v.amountPerPayment) || 0;
+                                                        if (typeof v.trialPeriodDuration === 'string')
+                                                            v.trialPeriodDuration = parseInt(v.amountPerPayment) || null;
+                                                        if (typeof v.membershipFee === 'string')
+                                                            v.membershipFee = parseFloat(v.membershipFee) || 0;
+                                                        return v;
+                                                    });
+                                                    resolve(resp);
+                                                }
+                                            })];
+                                        case 1: return [2 /*return*/, _a.sent()];
+                                    }
+                                });
+                            }); })();
+                        })];
                 });
             });
         };

@@ -10,6 +10,12 @@ stdin.on('data', e => {
 	if (!txt) return;
 	let cmd = txt.split(/\s/)[0];
 	switch (cmd) {
+		case 'get-planos': {
+			(async () => {
+				let result = await client.getPlanos('ACTIVE');
+				console.log(result);
+			})();
+		} break;
 		case 'consulta-retorno-transacao': {
 			let code = txt.split(/\s/)[1];
 			if (!code) return console.log('Código de transação não informado!');
@@ -85,14 +91,65 @@ stdin.on('data', e => {
 				}
 			});
 		} break;
+		case 'criar-plano': {
+			(async () => {
+				let planos = [{
+					reference: '5d49d4b5bf7a797dd19244f5',//5d49d4b5bf7a797dd19244f5:Chame Garçom
+					//redirectURL:'https://localhost:35443/api/pagseguro/adesao/5d49d4b5bf7a797dd19244f5/retorno',
+					preApproval: {
+						charge: 'AUTO',
+						amountPerPayment: 12.9,
+						name: 'Chame o Garçom',
+						period: 'YEARLY',
+						//receiver:{email: credentials.email}
+
+					}
+				}, {
+					reference: '5d08d38280a1d5db9a50ab94',//5d08d38280a1d5db9a50ab94:Padrão
+					//redirectURL:'https://localhost:35443/api/pagseguro/adesao/5d08d38280a1d5db9a50ab94/retorno',
+					preApproval: {
+						charge: 'AUTO',
+						amountPerPayment: 169.9,
+						name: 'Padrão',
+						period: 'YEARLY',
+						membershipFee: '0.00',
+						//receiver:{email: credentials.email}
+
+					}
+				}, {
+					reference: '5d08d38280a1d5db9a50ab95',//5d08d38280a1d5db9a50ab95:Avançado
+					//redirectURL:'https://localhost:35443/api/pagseguro/adesao/5d08d38280a1d5db9a50ab95/retorno',
+					preApproval: {
+						charge: 'AUTO',
+						amountPerPayment: 369.7,
+						name: 'Plus',
+						period: 'YEARLY',
+						membershipFee: '0.00',
+						//receiver:{email: credentials.email}
+
+					}
+				}];
+				for (let plano of planos) {
+					console.log('Criando plano ' + plano.preApproval.name + '...');
+					try {
+						let result = await client.criarPlano(plano)
+							.catch(e => console.error(e));
+						console.log('Resultado:', result);
+					} catch (e) {
+						console.log('Erro:', e);
+					}
+				}
+			})();
+
+		} break;
 		case 'aderir': {
 			client.aderirPlano({
-				plan:'',
-				reference:'',
+				plan: '',
+				reference: '',
 				paymentMethod: {
-					type:'CREDIT_CARD',
+					type: 'CREDIT_CARD',
 					credit: {
-						token:'',
+						token: '',
 						holder: {
 							billingAddress: {
 								street: '',
@@ -114,25 +171,25 @@ stdin.on('data', e => {
 						}
 					}
 				},
-				sender:{
-					name:'',
-					phone:{
-						areaCode:'', number:''
+				sender: {
+					name: '',
+					phone: {
+						areaCode: '', number: ''
 					},
-					email:'',
-					hash:'',
-					documents:[{
-						type:'CNPJ', value:''
+					email: '',
+					hash: '',
+					documents: [{
+						type: 'CNPJ', value: ''
 					}],
-					address:{
-						street:'',
-						number:'',
-						complement:'',
-						district:'',
-						city:'',
-						state:'',
-						postalCode:'',
-						country:''
+					address: {
+						street: '',
+						number: '',
+						complement: '',
+						district: '',
+						city: '',
+						state: '',
+						postalCode: '',
+						country: ''
 					}
 				}
 			});

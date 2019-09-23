@@ -59,11 +59,42 @@ export namespace constants {
 	};
 
 }
+export type PagSeguroPreApprovalRequestStatus = 'ACTIVE' | 'INACTIVE';
 export type Charge = 'AUTO' | 'MANUAL';
 export type PagSeguroCheckoutPaymentMethod = 'CREDIT_CARD' | 'BOLETO' | 'DEBITO_ITAU';
 export type Period = 'YEARLY' | 'MONTHLY' | 'BIMONTHLY' | 'TRIMONTHLY' | 'SEMIANNUALLY' | 'WEEKLY'
 export namespace PagSeguro {
-
+	interface IGetPreApprovalRequests {
+		resultsInThisPage: number;
+		currentPage: number;
+		totalPages: number;
+		date: Date;
+		preApprovalRequest: Array<IPreApprovalRequestInstance>
+	}
+	interface IPreApprovalRequestInstance {
+		code: string;
+		creationDate: Date;
+		status: PagSeguroPreApprovalRequestStatus;
+		name: string;
+		description?: string;
+		reference?: string;
+		charge: Charge;
+		period: Period;
+		amountPerPayment: number;
+		trialPeriodDuration?: number;
+		membershipFee: number;
+		maxUses?: number;
+		cancelURL?: string;
+		redirectURL?: string;
+	}
+	interface IPreApprovalRequestResponse {
+		code: string;
+		date: Date;
+	}
+	interface ICreatePreApprovalRequest {
+		code: string;
+		date: Date;
+	}
 	interface ICreateTransactionResponse {
 		checkout: ICreateTransactionResponseCheckout;
 	}
@@ -147,8 +178,8 @@ export namespace PagSeguro {
 
 	export class PagSeguroPreApprovalRequestDataReceiver {
 		/** Especifica o e-mail que deve aparecer na tela de pagamento.
-		 * Formato: Um e-mail v�lido, com limite de 60 caracteres.
-		 * O e-mail informado deve estar vinculado � conta PagSeguro que est� realizando a chamada � API. */
+		 * Formato: Um e-mail válido, com limite de 60 caracteres.
+		 * O e-mail informado deve estar vinculado á conta PagSeguro que está realizando a chamada á API. */
 		email: string
 	}
 	export class PagSeguroPreApprovalRequestDataAuto {
@@ -156,61 +187,61 @@ export namespace PagSeguro {
 		 * Nome/Identificador do plano. Formato: Livre, com limite de 100 caracteres. */
 		name: string;
 		/** REQUIRED
-		 * Indica o modelo de cobran�a do pagamento recorrente pr�-pago (AUTO) */
+		 * Indica o modelo de cobrança do pagamento recorrente pré-pago (AUTO) */
 		charge: 'AUTO' = 'AUTO';
 		/** REQUIRED
-		 * Periodicidade da cobran�a.
+		 * Periodicidade da cobrança.
 		 * Utilizar um dos valores da constante PAGESEGURO_PREAPPROVAL_PERIOD */
 		period: Period;
-		/** Valor exato de cada cobran�a.
-		 * Obrigat�rio para o modelo AUTO.
+		/** Valor exato de cada cobrança.
+		 * Obriagtório para o modelo AUTO.
 		 * Formato: Decimal, com duas casas decimais separadas por ponto (p.e, 1234.56).
 		 * Deve ser um valor maior ou igual a 1.00 e menor ou igual a 2000.00. */
 		amountPerPayment: number | string;
-		/** Valor da taxa de ades�o.
-		 * Sempre ser� cobrada juntamente com a primeira parcela do pagamento,
-		 * independente se o plano � pr�-pago ou p�s-pago.
+		/** Valor da taxa de adesão.
+		 * Sempre será cobrada juntamente com a primeira parcela do pagamento,
+		 * independente se o plano é pré-pago ou pós-pago.
 		 * Formato: Decimal, com duas casas decimais separadas por ponto (p.e, 1234.56),
 		 * maior ou igual a 0.00 e menor ou igual a 1000000.00. */
 		membershipFee: number | string;
-		/** Per�odo de teste, em dias.
-		 * A recorr�ncia mant�m o status INITIATED durante o per�odo de testes,
-		 * de modo que a primeira cobran�a s� ocorrer� ap�s esse per�odo,
-		 * permitindo que a recorr�ncia mude para ACTIVE.
+		/** período de teste, em dias.
+		 * A recorrência mantém o status INITIATED durante o período de testes,
+		 * de modo que a primeira cobrança só ocorrerá após esse período,
+		 * permitindo que a recorrência mude para ACTIVE.
 		 *
-		 * A cobran�a se d� imediatamente ap�s o fim do per�odo de testes;
+		 * A cobrança se dá imediatamente após o fim do período de testes;
 		 * Formato: Inteiro, maior ou igual a 1 e menor ou igual a 1000000. */
 		trialPeriodDuration?: number;
-		/** Dura��o de cada recorr�ncia. Obrigat�rio se initialDate e finalDate forem nulos. Proibido se initialDate ou finalDate n�o forem nulos. */
+		/** Duração de cada recorrência. Obriagtório se initialDate e finalDate forem nulos. Proibido se initialDate ou finalDate não forem nulos. */
 		expiration?: PagSeguroPreApprovalRequestDataExpiration;
-		/** Descri��o do plano. */
+		/** Descrição do plano. */
 		details?: string;
-		/** Valor m�ximo que pode ser cobrado durante a vig�ncia da assinatura. */
+		/** Valor máximo que pode ser cobrado durante a vigência da assinatura. */
 		maxTotalAmount?: number;
 		/**
-		 * Url para onde o assinante ser� redirecionado caso este solicite o cancelamento da assinatura no site do PagSeguro (fluxo de reten��o).
+		 * Url para onde o assinante será redirecionado caso este solicite o cancelamento da assinatura no site do PagSeguro (fluxo de retenção).
 		 * */
 		cancelURL?: string;
-		/** URL para onde o assinante ser� redirecionado, durante o fluxo de pagamento,
+		/** URL para onde o assinante será redirecionado, durante o fluxo de pagamento,
 		 * caso o mesmo queira alterar/revisar as regras da assinatura.
-		 * Este valor somente ser� utilizado caso queira utilizar este plano em um Pagamento Recorrente via bot�o. */
+		 * Este valor somente será utilizado caso queira utilizar este plano em um Pagamento Recorrente via botão. */
 		reviewURL?: string;
-		/** Quantidade m�xima de consumidores que podem aderir ao plano. */
+		/** Quantidade máxima de consumidores que podem aderir ao plano. */
 		maxUses?: number;
 		/**
 		 * Especifica o e-mail que deve aparecer na tela de pagamento.
-		 * Formato: Um e-mail v�lido, com limite de 60 caracteres.
-		 * O e-mail informado deve estar vinculado � conta PagSeguro que est� realizando a chamada � API.
+		 * Formato: Um e-mail válido, com limite de 60 caracteres.
+		 * O e-mail informado deve estar vinculado á conta PagSeguro que está realizando a chamada á API.
 		 * */
 		receiver?: PagSeguroPreApprovalRequestDataReceiver;
 
 	}
 	export class PagSeguroPreApprovalRequestDataExpiration {
 		/** REQUIRED
-		 * Um n�mero inteiro maior ou igual a 1 e menor ou igual a 1000000. */
+		 * Um Número inteiro maior ou igual a 1 e menor ou igual a 1000000. */
 		value: 0;
 		/** REQUIRED
-		 * Combine com value para obter a dura��o da recorr�ncia, ex: 2 YEARS. */
+		 * Combine com value para obter a duração da recorrência, ex: 2 YEARS. */
 		unit: ExpirationUnit;
 	}
 	export class PagSeguroPreApprovalRequestDataManual {
@@ -218,103 +249,103 @@ export namespace PagSeguro {
 		 * Nome/Identificador do plano. Formato: Livre, com limite de 100 caracteres. */
 		name: string;
 		/** REQUIRED
-		 * Indica o modelo de cobran�a do pagamento recorrente p�s-pago (MANUAL).*/
+		 * Indica o modelo de cobrança do pagamento recorrente pós-pago (MANUAL).*/
 		charge: 'MANUAL' = 'MANUAL';
 		/** REQUIRED
-		 * Periodicidade da cobran�a.
+		 * Periodicidade da cobrança.
 		 * Utilizar um dos valores da constante PAGESEGURO_PREAPPROVAL_PERIOD */
 		period: string;
-		/** Valor exato de cada cobran�a.
-		 * Obrigat�rio para o modelo AUTO.
+		/** Valor exato de cada cobrança.
+		 * Obriagtório para o modelo AUTO.
 		 * Formato: Decimal, com duas casas decimais separadas por ponto (p.e, 1234.56).
 		 * Deve ser um valor maior ou igual a 1.00 e menor ou igual a 2000.00. */
 		amountPerPayment?: number | string;
-		/** Valor da taxa de ades�o.
-		 * Sempre ser� cobrada juntamente com a primeira parcela do pagamento,
-		 * independente se o plano � pr�-pago ou p�s-pago.
+		/** Valor da taxa de adesão.
+		 * Sempre será cobrada juntamente com a primeira parcela do pagamento,
+		 * independente se o plano é pré-pago ou pós-pago.
 		 * Formato: Decimal, com duas casas decimais separadas por ponto (p.e, 1234.56),
 		 * maior ou igual a 0.00 e menor ou igual a 1000000.00. */
 		membershipFee?: number | string;
-		/** Per�odo de teste, em dias.
-		 * A recorr�ncia mant�m o status INITIATED durante o per�odo de testes,
-		 * de modo que a primeira cobran�a s� ocorrer� ap�s esse per�odo,
-		 * permitindo que a recorr�ncia mude para ACTIVE.
+		/** período de teste, em dias.
+		 * A recorrência mantém o status INITIATED durante o período de testes,
+		 * de modo que a primeira cobrança só ocorrerá após esse período,
+		 * permitindo que a recorrência mude para ACTIVE.
 		 *
-		 * No caso de pagamento pr�-pago, a cobran�a se d� imediatamente ap�s o fim
-		 * do per�odo de testes;
-		 * no caso de pagamento p�s-pago, a cobran�a ocorre ap�s o per�odo de cobran�a
-		 * somado ao per�odo de testes.
+		 * No caso de pagamento pré-pago, a cobrança se dá imediatamente após o fim
+		 * do período de testes;
+		 * no caso de pagamento pós-pago, a cobrança ocorre após o período de cobrança
+		 * somado ao período de testes.
 		 * Formato: Inteiro, maior ou igual a 1 e menor ou igual a 1000000. */
 		trialPeriodDuration: number;
-		/** Dura��o de cada recorr�ncia. Obrigat�rio se initialDate e finalDate forem nulos. Proibido se initialDate ou finalDate n�o forem nulos. */
+		/** Duração de cada recorrência. Obriagtório se initialDate e finalDate forem nulos. Proibido se initialDate ou finalDate não forem nulos. */
 		expiration?: PagSeguroPreApprovalRequestDataExpiration;
-		/** Descri��o do plano. */
+		/** Descrição do plano. */
 		details?: string;
-		/** Valor m�ximo que pode ser cobrado por m�s de vig�ncia da assinatura, independente de sua periodicidade.
+		/** Valor máximo que pode ser cobrado por mês de vigência da assinatura, independente de sua periodicidade.
 		 * Proibido se charge for AUTO. */
 		maxAmountPerPeriod?: number;
-		/** Valor m�ximo de cada cobran�a.
+		/** Valor máximo de cada cobrança.
 		 * Proibido se charge for AUTO. */
 		maxAmountPerPayment?: number;
-		/** Valor m�ximo que pode ser cobrado durante a vig�ncia da assinatura. */
+		/** Valor máximo que pode ser cobrado durante a vigência da assinatura. */
 		maxTotalAmount?: number;
-		/** N�mero m�ximo de cobran�as que podem ser realizadas por per�odo.
+		/** Número máximo de cobranças que podem ser realizadas por período.
 		 * Proibido se charge for AUTO. */
 		maxPaymentsPerPeriod?: number;
 		/**
 		 * > Proibido se charge for AUTO.
-		 * > Obrigat�rio se expiration for nulo, proibido se expiration n�o for nulo.
-		 * In�cio da vig�ncia do plano.
-		 * As cobran�as somente ser�o iniciadas ap�s esta data.
+		 * > Obriagtório se expiration for nulo, proibido se expiration não for nulo.
+		 * Início da vigência do plano.
+		 * As cobranças somente serão iniciadas após esta data.
 		 * Formato: YYYY-MM-DDThh:mm:ss.sTZD.
 		 * Valores aceitos: data atual <= preApprovalInitialDate <= data atual + 2 anos.
 		 * */
 		initialDate?: Date;
 		/**
-		 * > Obrigat�rio se expiration for nulo, proibido se expiration n�o for nulo.
-		 * Fim da vig�ncia do plano.
-		 * As cobran�as cessar�o ap�s esta data.
+		 * > Obriagtório se expiration for nulo, proibido se expiration não for nulo.
+		 * Fim da vigência do plano.
+		 * As cobranças cessarão após esta data.
 		 * Formato: YYYY-MM-DDThh:mm:ss.sTZD.
 		 * Valores aceitos:
-		 * Se preApprovalInitialDate for informado ent�o preApprovalInitialDate < preApprovalFinalDate <= preApprovalInitialDate + valor definido no perfil, caso contr�rio, data atual < preApprovalFinalDate <= data atual + valor definido no perfil.
+		 * Se preApprovalInitialDate for informado entáo preApprovalInitialDate < preApprovalFinalDate <= preApprovalInitialDate + valor definido no perfil, caso contrário, data atual < preApprovalFinalDate <= data atual + valor definido no perfil.
 		 * */
 		finalDate?: string;
 		/**
-		 * Dia do ano em que a cobran�a ser� realizada.
+		 * Dia do ano em que a cobrança será realizada.
 		 * Formato: MM-dd.
-		 * Obs: N�o pode ser utilizado em conjunto com dayOfWeek ou dayOfMonth.
+		 * Obs: não pode ser utilizado em conjunto com dayOfWeek ou dayOfMonth.
 		 * Se presente, period deve ser informado como YEARLY.
-		 * N�o pode ser utilizado em conjunto com charge = AUTO.
+		 * não pode ser utilizado em conjunto com charge = AUTO.
 		 * */
 		dayOfYear?: string;
 		/**
-		 * Dia do m�s em que a cobran�a ser� realizada.
-		 * Obs: N�o pode ser utilizado em conjunto com dayOfWeek ou dayOfYear.
+		 * Dia do mês em que a cobrança será realizada.
+		 * Obs: não pode ser utilizado em conjunto com dayOfWeek ou dayOfYear.
 		 * Se presente, period deve ser informado como MONTHLY, BIMONTHLY, TRIMONTHLY ou SEMIANNUALLY.
-		 * N�o pode ser utilizado em conjunto charge = AUTO.
+		 * não pode ser utilizado em conjunto charge = AUTO.
 		 * */
 		dayOfMonth?: number;
 		/**
-		 * Dia da semana em que a cobran�a ser� realizada.
-		 * Obs: N�o pode ser utilizado em conjunto com dayOfMonth ou dayOfYear.
+		 * Dia da semana em que a cobrança será realizada.
+		 * Obs: não pode ser utilizado em conjunto com dayOfMonth ou dayOfYear.
 		 * Se presente, period deve ser informado como WEEKLY.
-		 * N�o pode ser utilizado em conjunto com charge = AUTO.
+		 * não pode ser utilizado em conjunto com charge = AUTO.
 		 * */
 		dayOfWeek?: string;
 		/**
-		 * Url para onde o assinante ser� redirecionado caso este solicite o cancelamento da assinatura no site do PagSeguro (fluxo de reten��o).
+		 * Url para onde o assinante será redirecionado caso este solicite o cancelamento da assinatura no site do PagSeguro (fluxo de retenção).
 		 * */
 		cancelURL: string;
-		/** URL para onde o assinante ser� redirecionado, durante o fluxo de pagamento,
+		/** URL para onde o assinante será redirecionado, durante o fluxo de pagamento,
 		 * caso o mesmo queira alterar/revisar as regras da assinatura.
-		 * Este valor somente ser� utilizado caso queira utilizar este plano em um Pagamento Recorrente via bot�o. */
+		 * Este valor somente será utilizado caso queira utilizar este plano em um Pagamento Recorrente via botão. */
 		reviewURL: string;
-		/** Quantidade m�xima de consumidores que podem aderir ao plano. */
+		/** Quantidade máxima de consumidores que podem aderir ao plano. */
 		maxUses: number;
 		/**
 		 * Especifica o e-mail que deve aparecer na tela de pagamento.
-		 * Formato: Um e-mail v�lido, com limite de 60 caracteres.
-		 * O e-mail informado deve estar vinculado � conta PagSeguro que est� realizando a chamada � API.
+		 * Formato: Um e-mail válido, com limite de 60 caracteres.
+		 * O e-mail informado deve estar vinculado á conta PagSeguro que está realizando a chamada á API.
 		 * */
 		receiver?: PagSeguroPreApprovalRequestDataReceiver;
 		constructor() {
@@ -322,7 +353,7 @@ export namespace PagSeguro {
 		}
 	}
 	export class PagSeguroPreApprovalRequest {
-		redirectURL: string;
+		redirectURL?: string;
 		reference: string;
 		preApproval: PagSeguroPreApprovalRequestDataManual | PagSeguroPreApprovalRequestDataAuto;
 		constructor(charge: Charge) {
@@ -826,7 +857,7 @@ export namespace PagSeguro {
 		 * @param callback
 		 */
 		async criarPlano(plano: PagSeguroPreApprovalRequest, callback?: (err, response) => void) {
-			return new Promise((resolve, reject) => {
+			return new Promise<ICreatePreApprovalRequest>((resolve, reject) => {
 				(async () => {
 					const url = this.urlGen(endPoints.pagamentoRecorrente.criarPlano.url, {});
 					if (plano.preApproval.charge === constants.PAGESEGURO_PREAPPROVAL_CHARGE.AUTO) {
@@ -845,12 +876,13 @@ export namespace PagSeguro {
 					if (typeof plano.preApproval.membershipFee === 'number') plano.preApproval.membershipFee = (plano.preApproval.membershipFee * 1 || 0).toFixed(2);
 					var body = JSON.stringify(plano);// xmlParser.toXml({ preApprovalRequest: plano });
 					return await this.doRequest(endPoints.pagamentoRecorrente.criarPlano.method, url, body,
-						(err, resp) => {
+						(err, resp: ICreatePreApprovalRequest) => {
 							if (callback) callback(err, resp);
 							if (err) {
 								reject(err);
 							}
 							else {
+								resp.date = new Date(Date.parse(resp.date as any));
 								resolve(resp);
 							}
 						}
@@ -862,8 +894,8 @@ export namespace PagSeguro {
 		 * @param info
 		 * @param callback
 		 */
-		async aderirPlano(info: PagSeguroPreApproval, callback?: (err, response) => void) {
-			return new Promise<any>((resolve, reject) => {
+		async aderirPlano(info: PagSeguroPreApproval, callback?: (err, response: IPreApprovalRequestResponse) => void) {
+			return new Promise<IPreApprovalRequestResponse>((resolve, reject) => {
 				(async () => {
 					const url = this.urlGen(endPoints.pagamentoRecorrente.aderirPlano.url, {});
 					var body = JSON.stringify(info);
@@ -874,6 +906,7 @@ export namespace PagSeguro {
 								reject(err);
 							}
 							else {
+								resp.date = new Date(Date.parse(resp.date as any));
 								resolve(resp);
 							}
 						}
@@ -1034,14 +1067,15 @@ export namespace PagSeguro {
 				})();
 			});
 		};
+
 		/**
 		 *
-		 * @param {'ACTIVE' | 'INACTIVE'} status Default: ACTIVE
-		 * @param {Date} startCreationDate Default: Today
-		 * @param {Date} endCreationDate Default: Today
-		 * @param {(err: any, responseBody: any) => void} cb
+		 * @param status Default: ACTIVE
+		 * @param startCreationDate Default: Today
+		 * @param endCreationDate Default: Today
+		 * @param callback
 		 */
-		async getPlanos(status, startCreationDate, endCreationDate, cb) {
+		async getPlanos(status: PagSeguroPreApprovalRequestStatus, startCreationDate: Date | number | string, endCreationDate: Date | number | string, callback: (err: any, responseBody: any) => void) {
 			if (typeof status === 'undefined') status = 'ACTIVE';
 			if (typeof startCreationDate === 'undefined') {
 				startCreationDate = new Date();
@@ -1050,18 +1084,50 @@ export namespace PagSeguro {
 				startCreationDate.setSeconds(0);
 				startCreationDate.setMilliseconds(0);
 			}
+			else if (typeof startCreationDate === 'number') {
+				startCreationDate = new Date(startCreationDate);
+			}
+			else if (typeof startCreationDate === 'string') {
+				startCreationDate = new Date(Date.parse(startCreationDate));
+			}
 			if (typeof endCreationDate === 'undefined') {
 				endCreationDate = new Date();
 			}
-			if (typeof startCreationDate === 'number') startCreationDate = new Date(startCreationDate);
-			if (typeof endCreationDate === 'number') endCreationDate = new Date(endCreationDate);
-			if ((startCreationDate.__proto__.constructor.name).toLocaleLowerCase() !== 'date') throw new Error(`'startCreationDate' parameter is invalid`);
-			if ((endCreationDate.__proto__.constructor.name).toLocaleLowerCase() !== 'date') throw new Error(`'endCreationDate' parameter is invalid`);
-			startCreationDate = startCreationDate.toJSON();
-			endCreationDate = endCreationDate.toJSON();
+			else if (typeof endCreationDate === 'number') {
+				endCreationDate = new Date(endCreationDate);
+			}
+			else if (typeof endCreationDate === 'string') {
+				endCreationDate = new Date(Date.parse(endCreationDate));
+			}
+
+			if ((Object.getPrototypeOf(startCreationDate).constructor.name).toLocaleLowerCase() !== 'date') throw new Error(`'startCreationDate' parameter is invalid`);
+			if ((Object.getPrototypeOf(endCreationDate).constructor.name).toLocaleLowerCase() !== 'date') throw new Error(`'endCreationDate' parameter is invalid`);
+			startCreationDate = (startCreationDate as Date).toJSON();
+			endCreationDate = (endCreationDate as Date).toJSON();
 			const url = this.urlGen(endPoints.pagamentoRecorrente.getPlanos.url, { status, startCreationDate, endCreationDate });
 			//console.log(url);
-			return await this.doRequest('GET', url, null, cb);
+			return new Promise<IGetPreApprovalRequests>((resolve, reject) => {
+				(async () => {
+					return await this.doRequest('GET', url, null,
+						(err, resp: IGetPreApprovalRequests) => {
+							if (callback) callback(err, resp);
+							if (err) {
+								reject(err);
+							}
+							else {
+								resp.date = new Date(Date.parse((resp as any).date));
+								resp.preApprovalRequest = resp.preApprovalRequest.map(v => {
+									v.creationDate = new Date(Date.parse(v.creationDate as any));
+									if (typeof v.amountPerPayment === 'string') v.amountPerPayment = parseFloat(v.amountPerPayment) || 0;
+									if (typeof v.trialPeriodDuration === 'string') v.trialPeriodDuration = parseInt(v.amountPerPayment as any) || null;
+									if (typeof v.membershipFee === 'string') v.membershipFee = parseFloat(v.membershipFee as any) || 0;
+									return v;
+								});
+								resolve(resp);
+							}
+						});
+				})();
+			})
 		};
 
 		async getRecorrenciaPorNotificacao(callback?: (err, response) => void) {
