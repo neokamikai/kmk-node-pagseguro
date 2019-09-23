@@ -143,56 +143,67 @@ stdin.on('data', e => {
 
 		} break;
 		case 'aderir': {
+
 			client.aderirPlano({
-				plan: '',
-				reference: '',
-				paymentMethod: {
-					type: 'CREDIT_CARD',
-					credit: {
-						token: '',
-						holder: {
-							billingAddress: {
-								street: '',
-								number: '',
-								complement: '',
-								district: '',
-								postalCode: '',
-								city: '',
-								state: '',
-								country: 'BRA',
-							},
-							birthDate: null,
-							documents: [{ type: 'CNPJ', value: '' }],
-							name: '',
-							phone: {
-								areaCode: '',
-								number: ''
-							}
-						}
-					}
-				},
+				plan:'9BA597D9D4D4C1A44499BFACFA2C147E',
+				reference:'5d49d4b5bf7a797dd19244f5',
 				sender: {
-					name: '',
+					documents:[
+						{type:'CPF', value:'11111111111'}
+					],
+					name:'TESTE',
 					phone: {
-						areaCode: '', number: ''
+						areaCode: '11',
+						number:'912345678'
 					},
-					email: '',
-					hash: '',
-					documents: [{
-						type: 'CNPJ', value: ''
-					}],
-					address: {
-						street: '',
-						number: '',
-						complement: '',
-						district: '',
-						city: '',
-						state: '',
-						postalCode: '',
-						country: ''
+					address:{
+						city: 'TESTE',
+						complement: 'TESTE',
+						district:'TESTE',
+						number: 'TESTE',
+						postalCode:'00000000',
+						state:'SP',
+						street:'TESTE'
+					},
+					ip:'127.0.0.1',
+					email:'email@comrpador.com.br'
+				},
+				paymentMethod: {
+					type: "CREDITCARD",
+					creditCard: {
+						holder: {
+							documents:[
+								{type:'CPF', value:'11111111111'}
+							],
+							name:'TESTE',
+							phone: {
+								areaCode: '11',
+								number:'912345678'
+							},
+							billingAddress: {
+								city: 'TESTE',
+								complement: 'TESTE',
+								district:'TESTE',
+								number: 'TESTE',
+								postalCode:'00000000',
+								state:'SP',
+								street:'TESTE'
+							},
+							birthDate: '1987-09-10'
+						},
+						token:'TESTE'
 					}
 				}
-			});
+			}, (err, resp) => {
+					if(err){
+						console.log('callback catch', err);
+					}
+					else {
+						console.log(resp);
+					}
+				})/*.catch(e => {
+					console.log('promise catch',e);
+				})*/;
 		} break;
 		default:
 			console.log('unknown command:', cmd);

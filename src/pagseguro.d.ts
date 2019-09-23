@@ -14,7 +14,8 @@ export declare namespace constants {
 }
 export declare type PagSeguroPreApprovalRequestStatus = 'ACTIVE' | 'INACTIVE';
 export declare type Charge = 'AUTO' | 'MANUAL';
-export declare type PagSeguroCheckoutPaymentMethod = 'CREDIT_CARD' | 'BOLETO' | 'DEBITO_ITAU';
+export declare type PagSeguroCheckoutPaymentMethodType = 'CREDIT_CARD' | 'BOLETO' | 'DEBITO_ITAU';
+export declare type PagSeguroPreApprovalPaymentMethodType = 'CREDITCARD';
 export declare type Period = 'YEARLY' | 'MONTHLY' | 'BIMONTHLY' | 'TRIMONTHLY' | 'SEMIANNUALLY' | 'WEEKLY';
 export declare namespace PagSeguro {
     interface IGetPreApprovalRequests {
@@ -337,7 +338,7 @@ export declare namespace PagSeguro {
     }
     export class PagSeguroPaymentMethodCreditCardHolder {
         name: string;
-        birthDate: string;
+        birthDate: string | Date;
         documents: Array<PagSeguroDocument>;
         phone: PagSeguroPhone;
         billingAddress: PagSeguroAddress;
@@ -348,9 +349,13 @@ export declare namespace PagSeguro {
         holder: PagSeguroPaymentMethodCreditCardHolder;
         constructor();
     }
+    export class PagSeguroPreApprovalPaymentMethod {
+        type: PagSeguroPreApprovalPaymentMethodType;
+        creditCard: PagSeguroPaymentMethodCreditCard;
+    }
     export class PagSeguroPaymentMethod {
-        type: PagSeguroCheckoutPaymentMethod;
-        credit: PagSeguroPaymentMethodCreditCard;
+        type: PagSeguroCheckoutPaymentMethodType;
+        creditCard: PagSeguroPaymentMethodCreditCard;
     }
     export class PagSeguroPreApprovalPaymentItem {
         id: string;
@@ -372,7 +377,7 @@ export declare namespace PagSeguro {
         plan: string;
         reference: string;
         sender: PagSeguroPreApprovalSender;
-        paymentMethod: PagSeguroPaymentMethod;
+        paymentMethod: PagSeguroPreApprovalPaymentMethod;
         constructor();
     }
     export class PagSeguroCheckoutSender {
@@ -403,7 +408,7 @@ export declare namespace PagSeguro {
         exclude: Array<PagSeguroCheckoutAcceptedPaymentMethod>;
     }
     export class PagSeguroCheckoutAcceptedPaymentMethod {
-        group: PagSeguroCheckoutPaymentMethod;
+        group: PagSeguroCheckoutPaymentMethodType;
     }
     export class PagSeguroCheckoutPaymentMethodConfig {
         paymentMethod: PagSeguroCheckoutAcceptedPaymentMethod;

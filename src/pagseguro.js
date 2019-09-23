@@ -192,6 +192,12 @@ var PagSeguro;
         return PagSeguroPaymentMethodCreditCard;
     }());
     PagSeguro.PagSeguroPaymentMethodCreditCard = PagSeguroPaymentMethodCreditCard;
+    var PagSeguroPreApprovalPaymentMethod = /** @class */ (function () {
+        function PagSeguroPreApprovalPaymentMethod() {
+        }
+        return PagSeguroPreApprovalPaymentMethod;
+    }());
+    PagSeguro.PagSeguroPreApprovalPaymentMethod = PagSeguroPreApprovalPaymentMethod;
     var PagSeguroPaymentMethod = /** @class */ (function () {
         function PagSeguroPaymentMethod() {
         }
@@ -214,7 +220,7 @@ var PagSeguro;
     var PagSeguroPreApproval = /** @class */ (function () {
         function PagSeguroPreApproval() {
             this.sender = new PagSeguroPreApprovalSender();
-            this.paymentMethod = new PagSeguroPaymentMethod();
+            this.paymentMethod = new PagSeguroPreApprovalPaymentMethod();
         }
         return PagSeguroPreApproval;
     }());
@@ -541,7 +547,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -574,7 +581,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -605,7 +613,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -636,7 +645,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -695,7 +705,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resp.date = new Date(Date.parse(resp.date));
@@ -722,17 +733,56 @@ var PagSeguro;
                 return __generator(this, function (_a) {
                     return [2 /*return*/, new Promise(function (resolve, reject) {
                             (function () { return __awaiter(_this, void 0, void 0, function () {
-                                var url, body;
+                                var url, birthDate, d, d, body;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
                                             url = this.urlGen(endPoints.pagamentoRecorrente.aderirPlano.url, {});
+                                            if (info.paymentMethod && info.paymentMethod.creditCard) {
+                                                if (info.paymentMethod.creditCard.holder) {
+                                                    if (info.sender) {
+                                                        if (info.sender.email) {
+                                                            if (this.parameters.environment === 'sandbox') {
+                                                                info.sender.email = info.sender.email.replace(/\@[\w\W]+/i, '@sandbox.pagseguro.com.br');
+                                                            }
+                                                        }
+                                                        if (info.sender.address) {
+                                                            if (!info.sender.address.country)
+                                                                info.sender.address.country = 'BRA';
+                                                        }
+                                                    }
+                                                    if (!info.paymentMethod.creditCard.holder.birthDate) {
+                                                        if (info.paymentMethod.creditCard.holder.birthDate !== null)
+                                                            info.paymentMethod.creditCard.holder.birthDate = null;
+                                                    }
+                                                    else if (typeof info.paymentMethod.creditCard.holder.birthDate === 'string') {
+                                                        birthDate = info.paymentMethod.creditCard.holder.birthDate;
+                                                        if (birthDate.match(/^\d\d\d\d\-\d\d\-\d\d$/)) {
+                                                            d = (new Date(Date.parse(birthDate + 'T00:00:00.000-03:00')));
+                                                            info.paymentMethod.creditCard.holder.birthDate = d.getDate().toString().padStart(2, '0') + "/" + (1 + d.getMonth()).toString().padStart(2, '0') + "/" + d.getFullYear();
+                                                        }
+                                                    }
+                                                    else if (typeof info.paymentMethod.creditCard.holder.birthDate === 'object' && Object.getPrototypeOf(info.paymentMethod.creditCard.holder.birthDate) == Date.prototype) {
+                                                        d = info.paymentMethod.creditCard.holder.birthDate;
+                                                        info.paymentMethod.creditCard.holder.birthDate = d.getDate().toString().padStart(2, '0') + "/" + (1 + d.getMonth()).toString().padStart(2, '0') + "/" + d.getFullYear();
+                                                    }
+                                                    if (info.paymentMethod.creditCard.holder.billingAddress) {
+                                                        if (!info.paymentMethod.creditCard.holder.billingAddress.country)
+                                                            info.paymentMethod.creditCard.holder.billingAddress.country = 'BRA';
+                                                    }
+                                                }
+                                            }
+                                            console.log(info.paymentMethod.creditCard.holder);
                                             body = JSON.stringify(info);
                                             return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.aderirPlano.method, url, body, function (err, resp) {
-                                                    if (callback)
+                                                    if (callback) {
                                                         callback(err, resp);
+                                                        Object.defineProperty(callback, 'called', { value: true });
+                                                    }
+                                                    ;
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resp.date = new Date(Date.parse(resp.date));
@@ -742,7 +792,12 @@ var PagSeguro;
                                         case 1: return [2 /*return*/, _a.sent()];
                                     }
                                 });
-                            }); })();
+                            }); })().catch(function (e) {
+                                if (callback && !callback['called'])
+                                    callback(e, null);
+                                else
+                                    throw e;
+                            });
                         })];
                 });
             });
@@ -763,7 +818,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -793,7 +849,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -823,7 +880,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -853,7 +911,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -883,7 +942,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -913,7 +973,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -943,7 +1004,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -973,7 +1035,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -1003,7 +1066,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -1070,7 +1134,8 @@ var PagSeguro;
                                                 if (callback)
                                                     callback(err, resp);
                                                 if (err) {
-                                                    reject(err);
+                                                    if (!callback)
+                                                        reject(err);
                                                 }
                                                 else {
                                                     resp.date = new Date(Date.parse(resp.date));
@@ -1111,7 +1176,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -1141,7 +1207,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);
@@ -1171,7 +1238,8 @@ var PagSeguro;
                                                     if (callback)
                                                         callback(err, resp);
                                                     if (err) {
-                                                        reject(err);
+                                                        if (!callback)
+                                                            reject(err);
                                                     }
                                                     else {
                                                         resolve(resp);

@@ -61,7 +61,8 @@ export namespace constants {
 }
 export type PagSeguroPreApprovalRequestStatus = 'ACTIVE' | 'INACTIVE';
 export type Charge = 'AUTO' | 'MANUAL';
-export type PagSeguroCheckoutPaymentMethod = 'CREDIT_CARD' | 'BOLETO' | 'DEBITO_ITAU';
+export type PagSeguroCheckoutPaymentMethodType = 'CREDIT_CARD' | 'BOLETO' | 'DEBITO_ITAU';
+export type PagSeguroPreApprovalPaymentMethodType = 'CREDITCARD';
 export type Period = 'YEARLY' | 'MONTHLY' | 'BIMONTHLY' | 'TRIMONTHLY' | 'SEMIANNUALLY' | 'WEEKLY'
 export namespace PagSeguro {
 	interface IGetPreApprovalRequests {
@@ -398,7 +399,7 @@ export namespace PagSeguro {
 	}
 	export class PagSeguroPaymentMethodCreditCardHolder {
 		name: string;
-		birthDate: string;
+		birthDate: string | Date;
 		documents: Array<PagSeguroDocument>;
 		phone: PagSeguroPhone;
 		billingAddress: PagSeguroAddress;
@@ -417,9 +418,13 @@ export namespace PagSeguro {
 			this.holder = new PagSeguroPaymentMethodCreditCardHolder();
 		}
 	}
+	export class PagSeguroPreApprovalPaymentMethod {
+		type: PagSeguroPreApprovalPaymentMethodType;
+		creditCard: PagSeguroPaymentMethodCreditCard;
+	}
 	export class PagSeguroPaymentMethod {
-		type: PagSeguroCheckoutPaymentMethod;
-		credit: PagSeguroPaymentMethodCreditCard;
+		type: PagSeguroCheckoutPaymentMethodType;
+		creditCard: PagSeguroPaymentMethodCreditCard;
 	}
 	export class PagSeguroPreApprovalPaymentItem {
 		id: string;
@@ -444,10 +449,10 @@ export namespace PagSeguro {
 		plan: string;
 		reference: string;
 		sender: PagSeguroPreApprovalSender;
-		paymentMethod: PagSeguroPaymentMethod;
+		paymentMethod: PagSeguroPreApprovalPaymentMethod;
 		constructor() {
 			this.sender = new PagSeguroPreApprovalSender();
-			this.paymentMethod = new PagSeguroPaymentMethod();
+			this.paymentMethod = new PagSeguroPreApprovalPaymentMethod();
 		}
 	}
 	export class PagSeguroCheckoutSender {
@@ -478,7 +483,7 @@ export namespace PagSeguro {
 		exclude: Array<PagSeguroCheckoutAcceptedPaymentMethod>
 	}
 	export class PagSeguroCheckoutAcceptedPaymentMethod {
-		group: PagSeguroCheckoutPaymentMethod
+		group: PagSeguroCheckoutPaymentMethodType
 	}
 	export class PagSeguroCheckoutPaymentMethodConfig {
 		paymentMethod: PagSeguroCheckoutAcceptedPaymentMethod;
@@ -791,7 +796,7 @@ export namespace PagSeguro {
 					await this.doRequest(endPoints.pagamentoAvulso.consultaRetornoTransacao.method, url, {}, (err, resp) => {
 						if (callback) callback(err, resp);
 						if (err) {
-							reject(err);
+							if (!callback) reject(err);
 						}
 						else {
 							resolve(resp);
@@ -809,7 +814,7 @@ export namespace PagSeguro {
 					await this.doRequest(endPoints.pagamentoAvulso.estornarTransacaoCheckout.method, url, {}, (err, resp) => {
 						if (callback) callback(err, resp);
 						if (err) {
-							reject(err);
+							if (!callback) reject(err);
 						}
 						else {
 							resolve(resp);
@@ -825,7 +830,7 @@ export namespace PagSeguro {
 					await this.doRequest(endPoints.pagamentoAvulso.estornarTransacaoCheckout.method, url, {}, (err, resp) => {
 						if (callback) callback(err, resp);
 						if (err) {
-							reject(err);
+							if (!callback) reject(err);
 						}
 						else {
 							resolve(resp);
@@ -842,7 +847,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -879,7 +884,7 @@ export namespace PagSeguro {
 						(err, resp: ICreatePreApprovalRequest) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resp.date = new Date(Date.parse(resp.date as any));
@@ -898,12 +903,46 @@ export namespace PagSeguro {
 			return new Promise<IPreApprovalRequestResponse>((resolve, reject) => {
 				(async () => {
 					const url = this.urlGen(endPoints.pagamentoRecorrente.aderirPlano.url, {});
+					if (info.paymentMethod && info.paymentMethod.creditCard) {
+						if (info.paymentMethod.creditCard.holder) {
+							if (info.sender) {
+								if(info.sender.email){
+									if(this.parameters.environment === 'sandbox'){
+										info.sender.email = info.sender.email.replace(/\@[\w\W]+/i, '@sandbox.pagseguro.com.br');
+									}
+								}
+								if (info.sender.address) {
+									if (!info.sender.address.country) info.sender.address.country = 'BRA';
+								}
+							}
+							if (!info.paymentMethod.creditCard.holder.birthDate) {
+								if (info.paymentMethod.creditCard.holder.birthDate !== null) info.paymentMethod.creditCard.holder.birthDate = null;
+							}
+							else if (typeof info.paymentMethod.creditCard.holder.birthDate === 'string') {
+								let birthDate = info.paymentMethod.creditCard.holder.birthDate;
+								if (birthDate.match(/^\d\d\d\d\-\d\d\-\d\d$/)) {
+									let d = (new Date(Date.parse(birthDate + 'T00:00:00.000-03:00')));
+									info.paymentMethod.creditCard.holder.birthDate = `${d.getDate().toString().padStart(2, '0')}/${(1 + d.getMonth()).toString().padStart(2, '0')}/${d.getFullYear()}`;
+								}
+							}
+							else if (typeof info.paymentMethod.creditCard.holder.birthDate === 'object' && Object.getPrototypeOf(info.paymentMethod.creditCard.holder.birthDate) == Date.prototype) {
+								let d = info.paymentMethod.creditCard.holder.birthDate;
+								info.paymentMethod.creditCard.holder.birthDate = `${d.getDate().toString().padStart(2, '0')}/${(1 + d.getMonth()).toString().padStart(2, '0')}/${d.getFullYear()}`;
+							}
+							if (info.paymentMethod.creditCard.holder.billingAddress) {
+								if (!info.paymentMethod.creditCard.holder.billingAddress.country)  info.paymentMethod.creditCard.holder.billingAddress.country = 'BRA';
+
+							}
+						}
+
+					}
+					console.log(info.paymentMethod.creditCard.holder)
 					var body = JSON.stringify(info);
 					return await this.doRequest(endPoints.pagamentoRecorrente.aderirPlano.method, url, body,
 						(err, resp) => {
-							if (callback) callback(err, resp);
+							if (callback) { callback(err, resp); Object.defineProperty(callback, 'called', { value: true }); };
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resp.date = new Date(Date.parse(resp.date as any));
@@ -911,7 +950,10 @@ export namespace PagSeguro {
 							}
 						}
 						, 'application/json');
-				})();
+				})().catch(e => {
+					if (callback && !callback['called']) callback(e, null);
+					else throw e;
+				});
 			});
 		};
 
@@ -922,7 +964,7 @@ export namespace PagSeguro {
 					return await this.doRequest(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.method, url, null, (err, resp) => {
 						if (callback) callback(err, resp);
 						if (err) {
-							reject(err);
+							if (!callback) reject(err);
 						}
 						else {
 							resolve(resp);
@@ -939,7 +981,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -956,7 +998,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -973,7 +1015,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -990,7 +1032,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -1007,7 +1049,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -1024,7 +1066,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -1041,7 +1083,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -1058,7 +1100,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -1112,7 +1154,7 @@ export namespace PagSeguro {
 						(err, resp: IGetPreApprovalRequests) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resp.date = new Date(Date.parse((resp as any).date));
@@ -1138,7 +1180,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -1155,7 +1197,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
@@ -1172,7 +1214,7 @@ export namespace PagSeguro {
 						(err, resp) => {
 							if (callback) callback(err, resp);
 							if (err) {
-								reject(err);
+								if (!callback) reject(err);
 							}
 							else {
 								resolve(resp);
