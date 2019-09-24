@@ -545,7 +545,7 @@ export namespace PagSeguro {
 		}
 		private paymentUrlGen(route: string, queryStringParameters = {}) {
 			let queryParams = ((): any => {
-				return { email: this.parameters.email, token: this.parameters.token };
+				return { };
 			})();
 			if (typeof queryStringParameters === "string") { queryStringParameters = qsParse(queryStringParameters); }
 			if (typeof queryStringParameters === "object" && !Array.isArray(queryStringParameters)) {

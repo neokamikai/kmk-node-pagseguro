@@ -315,10 +315,9 @@ var PagSeguro;
             return "" + this.baseUrl + route + "?" + querystring_1.stringify(queryParams);
         };
         Client.prototype.paymentUrlGen = function (route, queryStringParameters) {
-            var _this = this;
             if (queryStringParameters === void 0) { queryStringParameters = {}; }
             var queryParams = (function () {
-                return { email: _this.parameters.email, token: _this.parameters.token };
+                return {};
             })();
             if (typeof queryStringParameters === "string") {
                 queryStringParameters = querystring_1.parse(queryStringParameters);

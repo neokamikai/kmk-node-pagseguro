@@ -12,7 +12,7 @@ stdin.on('data', e => {
 	switch (cmd) {
 		case 'get-planos': {
 			(async () => {
-				let result = await client.getPlanos('ACTIVE');
+				let result = await client.getPlanos('ACTIVE', 0);
 				console.log(result);
 			})();
 		} break;
