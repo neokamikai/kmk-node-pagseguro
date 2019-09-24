@@ -512,7 +512,7 @@ var PagSeguro;
                             _this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, function (err, resp) {
                                 if (err) {
                                     if (callback)
-                                        callback(err, resp);
+                                        callback(err, resp, body);
                                     else
                                         reject(err);
                                 }
@@ -524,7 +524,7 @@ var PagSeguro;
                                         resp.checkout.scriptUrl = _this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
                                     resolve(resp);
                                     if (callback)
-                                        callback(err, resp);
+                                        callback(err, resp, body);
                                 }
                             }, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
                         })];

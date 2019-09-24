@@ -489,7 +489,7 @@ export namespace PagSeguro {
 		paymentMethod: PagSeguroCheckoutAcceptedPaymentMethod;
 		configs: Array<PagSeguroCheckoutPaymentMethodConfigEntry>
 	}
-	type PagSeguroCheckoutPaymentMethodConfigType = 'DISCOUNT_PERCENT' | 'MAX_INSTALLMENTS_NO_INTEREST' | 'MAX_INSTALLMENTS';
+	type PagSeguroCheckoutPaymentMethodConfigType = 'DISCOUNT_PERCENT' | 'MAX_INSTALLMENTS_NO_INTEREST' | 'MAX_INSTALLMENTS_LIMIT';
 	export class PagSeguroCheckoutPaymentMethodConfigEntry {
 		key: PagSeguroCheckoutPaymentMethodConfigType;
 		value: string;
@@ -677,7 +677,7 @@ export namespace PagSeguro {
 				cb(err, !response || !response.session || !response.session.id ? null : response.session.id)
 				, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
 		}
-		async criarTransacao(checkout: PagSeguroCheckout, callback?: (err, response: ICreateTransactionResponse) => void, mode: PagSeguroCheckoutMode = 'redirect') {
+		async criarTransacao(checkout: PagSeguroCheckout, callback?: (err, response: ICreateTransactionResponse, xmlRequestBody?: string) => void, mode: PagSeguroCheckoutMode = 'redirect') {
 			let url = this.urlGen(endPoints.pagamentoAvulso.criarTransacao.url, {});
 			if (!checkout) throw new Error('missing argument: checkout');
 			if (!checkout.sender) throw new Error('missing property: sender');
@@ -775,7 +775,7 @@ export namespace PagSeguro {
 			return new Promise<ICreateTransactionResponse>((resolve, reject) => {
 				this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, (err, resp) => {
 					if (err) {
-						if (callback) callback(err, resp);
+						if (callback) callback(err, resp, body);
 						else reject(err);
 
 					}
@@ -784,7 +784,7 @@ export namespace PagSeguro {
 						if (mode === 'redirect') resp.checkout.redirectUrl = this.paymentUrlGen(endPoints.pagamentoAvulso.redirectToPayment.url, { code: resp.checkout.code });
 						if (mode === 'lightbox') resp.checkout.scriptUrl = this.scriptUrlGen(endPoints.pagamentoAvulso.lightboxPayment.url);
 						resolve(resp);
-						if (callback) callback(err, resp);
+						if (callback) callback(err, resp, body);
 					}
 				}, 'application/xml; charset=ISO-8859-1', 'application/xml; charset=ISO-8859-1');
 			});

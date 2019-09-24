@@ -414,7 +414,7 @@ export declare namespace PagSeguro {
         paymentMethod: PagSeguroCheckoutAcceptedPaymentMethod;
         configs: Array<PagSeguroCheckoutPaymentMethodConfigEntry>;
     }
-    type PagSeguroCheckoutPaymentMethodConfigType = 'DISCOUNT_PERCENT' | 'MAX_INSTALLMENTS_NO_INTEREST' | 'MAX_INSTALLMENTS';
+    type PagSeguroCheckoutPaymentMethodConfigType = 'DISCOUNT_PERCENT' | 'MAX_INSTALLMENTS_NO_INTEREST' | 'MAX_INSTALLMENTS_LIMIT';
     export class PagSeguroCheckoutPaymentMethodConfigEntry {
         key: PagSeguroCheckoutPaymentMethodConfigType;
         value: string;
@@ -451,7 +451,7 @@ export declare namespace PagSeguro {
         private scriptUrlGen;
         private doRequest;
         sessionId(cb: (err: any, sessionId: string) => any): Promise<any>;
-        criarTransacao(checkout: PagSeguroCheckout, callback?: (err: any, response: ICreateTransactionResponse) => void, mode?: PagSeguroCheckoutMode): Promise<ICreateTransactionResponse>;
+        criarTransacao(checkout: PagSeguroCheckout, callback?: (err: any, response: ICreateTransactionResponse, xmlRequestBody?: string) => void, mode?: PagSeguroCheckoutMode): Promise<ICreateTransactionResponse>;
         consultaRetornoTransacaoCheckout(notificationCode: string, callback?: (err: any, response: IGetCheckoutTransactionResponse) => void): Promise<IGetCheckoutTransactionResponse>;
         estornarTransacaoParcialCheckout(transactionCode: string, refundValue: PagSeguroAmount, callback?: (err: any, response: IRefundCheckoutTransactionResponse) => void): Promise<IRefundCheckoutTransactionResponse>;
         estornarTransacaoCheckout(transactionCode: string, callback?: (err: any, response: IRefundCheckoutTransactionResponse) => void): Promise<IRefundCheckoutTransactionResponse>;
