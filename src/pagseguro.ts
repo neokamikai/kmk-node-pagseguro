@@ -65,6 +65,23 @@ export type PagSeguroCheckoutPaymentMethodType = 'CREDIT_CARD' | 'BOLETO' | 'DEB
 export type PagSeguroPreApprovalPaymentMethodType = 'CREDITCARD';
 export type Period = 'YEARLY' | 'MONTHLY' | 'BIMONTHLY' | 'TRIMONTHLY' | 'SEMIANNUALLY' | 'WEEKLY'
 export namespace PagSeguro {
+	interface IGetPreApprovals {
+		resultsInThisPage: number;
+		currentPage: number;
+		totalPages: number;
+		date: Date;
+		preApprovalList: Array<IPreApprovalInstance>
+	}
+	interface IPreApprovalInstance {
+		name: string,
+		code: string,
+		tracker: string,
+		status: string,
+		lastEventDate: Date,
+		charge: string,
+		sender: PagSeguroPreApprovalSender,
+		date: Date
+	}
 	interface IGetPreApprovalRequests {
 		resultsInThisPage: number;
 		currentPage: number;
@@ -545,7 +562,7 @@ export namespace PagSeguro {
 		}
 		private paymentUrlGen(route: string, queryStringParameters = {}) {
 			let queryParams = ((): any => {
-				return { };
+				return {};
 			})();
 			if (typeof queryStringParameters === "string") { queryStringParameters = qsParse(queryStringParameters); }
 			if (typeof queryStringParameters === "object" && !Array.isArray(queryStringParameters)) {
@@ -611,25 +628,25 @@ export namespace PagSeguro {
 				}
 				if (err) {
 					//console.log('[PagSeguro Response] Error:', err);
-					return cb(err, body);
-				} else if (response.statusCode == 200) {
-					return cb(null, body);
+					return cb(err, body, response);
+				} else if (response.statusCode == 200 || response.statusCode == 204) {
+					return cb(null, body, response);
 				} else {
 					try {
 						if (body) {
 							//console.log('[PagSeguro Response] Response Body:', body);
 							const json = body;
 							if (json.errors && json.errors.error) {
-								return cb(json.errors.error, json);
+								return cb(json.errors.error, json, response);
 							}
-							return cb(json);
+							return cb(json, undefined, response);
 						}
-						else return (cb(response.statusMessage));
+						else return (cb(response.statusMessage, undefined, response));
 					} catch (e) {
 						try {
 							const json = JSON.parse(body);
 							if (json.errors && json.errors.error) {
-								return cb(json.errors.error, json);
+								return cb(json.errors.error, json, response);
 							}
 
 						} catch (e) {
@@ -637,7 +654,7 @@ export namespace PagSeguro {
 							//console.log(body);
 						}
 					}
-					return cb(body);
+					return cb(body, undefined, response);
 				}
 			}
 
@@ -656,14 +673,17 @@ export namespace PagSeguro {
 					}
 				case 'PUT':
 					{
-						return await request.put({
-							url, body, headers: { accept: 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1', 'content-type': contentType }
-						}, responseHandler);
+						let options = {
+							url, body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
+						};
+						if(Object.hasOwnProperty.call(options,'body') && !options.body) delete options.body;
+						if(Object.hasOwnProperty.call(options.headers,'content-type') && !options.headers['content-type']) delete options.headers['content-type'];
+						return await request.put(options, responseHandler);
 					}
 				case 'DELETE':
 					{
 						return await request.delete({
-							url, body, headers: { accept: 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1', 'content-type': contentType }
+							url, body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
 						}, responseHandler);
 					}
 
@@ -906,8 +926,8 @@ export namespace PagSeguro {
 					if (info.paymentMethod && info.paymentMethod.creditCard) {
 						if (info.paymentMethod.creditCard.holder) {
 							if (info.sender) {
-								if(info.sender.email){
-									if(this.parameters.environment === 'sandbox'){
+								if (info.sender.email) {
+									if (this.parameters.environment === 'sandbox') {
 										info.sender.email = info.sender.email.replace(/\@[\w\W]+/i, '@sandbox.pagseguro.com.br');
 									}
 								}
@@ -930,13 +950,12 @@ export namespace PagSeguro {
 								info.paymentMethod.creditCard.holder.birthDate = `${d.getDate().toString().padStart(2, '0')}/${(1 + d.getMonth()).toString().padStart(2, '0')}/${d.getFullYear()}`;
 							}
 							if (info.paymentMethod.creditCard.holder.billingAddress) {
-								if (!info.paymentMethod.creditCard.holder.billingAddress.country)  info.paymentMethod.creditCard.holder.billingAddress.country = 'BRA';
+								if (!info.paymentMethod.creditCard.holder.billingAddress.country) info.paymentMethod.creditCard.holder.billingAddress.country = 'BRA';
 
 							}
 						}
 
 					}
-					console.log(info.paymentMethod.creditCard.holder)
 					var body = JSON.stringify(info);
 					return await this.doRequest(endPoints.pagamentoRecorrente.aderirPlano.method, url, body,
 						(err, resp) => {
@@ -1007,18 +1026,19 @@ export namespace PagSeguro {
 				})();
 			});
 		};
-		async cancelarAdesao(callback?: (err, response) => void) {
-			return new Promise((resolve, reject) => {
+		async cancelarAdesao(preApprovalCode: string, callback?: (err, response: boolean) => void) {
+			return new Promise<boolean>((resolve, reject) => {
 				(async () => {
-					const url = this.urlGen(endPoints.pagamentoRecorrente.cancelarAdesao.url, {});
-					return await this.doRequest(endPoints.pagamentoRecorrente.cancelarAdesao.method, url, null,
-						(err, resp) => {
-							if (callback) callback(err, resp);
+					const url = this.urlGen(endPoints.pagamentoRecorrente.cancelarAdesao.url, { preApprovalCode });
+					return await this.doRequest(endPoints.pagamentoRecorrente.cancelarAdesao.method, url, undefined,
+						(err, resp, response) => {
+							if (callback) callback(err, response.statusCode === 204);
 							if (err) {
 								if (!callback) reject(err);
+								resolve(response.statusCode === 204);
 							}
 							else {
-								resolve(resp);
+								resolve(response.statusCode === 204);
 							}
 						});
 				})();
@@ -1075,17 +1095,52 @@ export namespace PagSeguro {
 				})();
 			});
 		};
-		async getAdesoes(callback?: (err, response) => void) {
-			return new Promise((resolve, reject) => {
+		async getAdesoes(parameters: { preApprovalRequest?: string, maxPageResults?: number, initialDate?: Date | number | string, finalDate?: Date | number | string, senderEmail?: string, status?: string }, callback?: (err, response) => void) {
+			let { initialDate, finalDate, maxPageResults, preApprovalRequest, senderEmail, status } = parameters || {};
+			if (typeof initialDate === 'undefined') {
+				initialDate = new Date();
+				initialDate.setHours(0);
+				initialDate.setMinutes(0);
+				initialDate.setSeconds(0);
+				initialDate.setMilliseconds(0);
+			}
+			else if (typeof initialDate === 'number') {
+				initialDate = new Date(initialDate);
+			}
+			else if (typeof initialDate === 'string') {
+				initialDate = new Date(Date.parse(initialDate));
+			}
+			if (typeof finalDate === 'undefined') {
+				finalDate = initialDate;
+			}
+			else if (typeof finalDate === 'number') {
+				finalDate = new Date(finalDate);
+			}
+			else if (typeof finalDate === 'string') {
+				finalDate = new Date(Date.parse(finalDate));
+			}
+			if (Object.getPrototypeOf(initialDate) !== Date.prototype) throw new Error(`'initialDate' parameter is invalid`);
+			if (Object.getPrototypeOf(finalDate) !== Date.prototype) throw new Error(`'finalDate' parameter is invalid`);
+			initialDate = (initialDate as Date).toJSON();
+			finalDate = (finalDate as Date).toJSON();
+
+			parameters = JSON.parse(JSON.stringify({ initialDate, finalDate, maxPageResults, preApprovalRequest, senderEmail, status }));
+
+			return new Promise<IGetPreApprovals>((resolve, reject) => {
 				(async () => {
-					const url = this.urlGen(endPoints.pagamentoRecorrente.getAdesoes.url, {});
+					const url = this.urlGen(endPoints.pagamentoRecorrente.getAdesoes.url, parameters);
 					return await this.doRequest(endPoints.pagamentoRecorrente.getAdesoes.method, url, null,
-						(err, resp) => {
+						(err, resp: IGetPreApprovals) => {
 							if (callback) callback(err, resp);
 							if (err) {
 								if (!callback) reject(err);
 							}
 							else {
+								resp.preApprovalList = resp.preApprovalList.map(a => {
+									if (typeof a.date === 'string') a.date = new Date(Date.parse(a.date));
+									if (typeof a.lastEventDate === 'string') a.lastEventDate = new Date(Date.parse(a.lastEventDate));
+									return a;
+								})
 								resolve(resp);
 							}
 						});
@@ -1142,8 +1197,8 @@ export namespace PagSeguro {
 				endCreationDate = new Date(Date.parse(endCreationDate));
 			}
 
-			if ((Object.getPrototypeOf(startCreationDate).constructor.name).toLocaleLowerCase() !== 'date') throw new Error(`'startCreationDate' parameter is invalid`);
-			if ((Object.getPrototypeOf(endCreationDate).constructor.name).toLocaleLowerCase() !== 'date') throw new Error(`'endCreationDate' parameter is invalid`);
+			if (Object.getPrototypeOf(startCreationDate) !== Date.prototype) throw new Error(`'startCreationDate' parameter is invalid`);
+			if (Object.getPrototypeOf(endCreationDate) !== Date.prototype) throw new Error(`'endCreationDate' parameter is invalid`);
 			startCreationDate = (startCreationDate as Date).toJSON();
 			endCreationDate = (endCreationDate as Date).toJSON();
 			const url = this.urlGen(endPoints.pagamentoRecorrente.getPlanos.url, { status, startCreationDate, endCreationDate });

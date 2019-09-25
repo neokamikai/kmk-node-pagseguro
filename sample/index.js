@@ -10,6 +10,28 @@ stdin.on('data', e => {
 	if (!txt) return;
 	let cmd = txt.split(/\s/)[0];
 	switch (cmd) {
+		case 'cancelar-adesao':{
+			let codigo = txt.split(/\s/)[1];
+			if(!codigo) return  console.log('Código da adesão não informado');
+			(async () => {
+				console.log('Cancelar adesão:',codigo);
+				let result = await client.cancelarAdesao(codigo);
+				console.log('Resposta:',result);
+			})().catch(e => {
+				console.log('catch',e);
+			});
+		}break;
+		case 'get-adesoes': {
+			(async () => {
+				let result = await client.getAdesoes({
+					initialDate:'2019-01-01',
+					finalDate:'2019-09-24'
+				});
+				console.log(result);
+			})().catch(e => {
+				console.log(e);
+			});
+		} break;
 		case 'get-planos': {
 			(async () => {
 				let result = await client.getPlanos('ACTIVE', 0);

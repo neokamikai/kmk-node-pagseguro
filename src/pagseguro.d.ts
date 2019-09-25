@@ -18,6 +18,23 @@ export declare type PagSeguroCheckoutPaymentMethodType = 'CREDIT_CARD' | 'BOLETO
 export declare type PagSeguroPreApprovalPaymentMethodType = 'CREDITCARD';
 export declare type Period = 'YEARLY' | 'MONTHLY' | 'BIMONTHLY' | 'TRIMONTHLY' | 'SEMIANNUALLY' | 'WEEKLY';
 export declare namespace PagSeguro {
+    interface IGetPreApprovals {
+        resultsInThisPage: number;
+        currentPage: number;
+        totalPages: number;
+        date: Date;
+        preApprovalList: Array<IPreApprovalInstance>;
+    }
+    interface IPreApprovalInstance {
+        name: string;
+        code: string;
+        tracker: string;
+        status: string;
+        lastEventDate: Date;
+        charge: string;
+        sender: PagSeguroPreApprovalSender;
+        date: Date;
+    }
     interface IGetPreApprovalRequests {
         resultsInThisPage: number;
         currentPage: number;
@@ -470,11 +487,18 @@ export declare namespace PagSeguro {
         alterarMeioPagtoPlano(callback?: (err: any, response: any) => void): Promise<unknown>;
         alterarStatusAdesao(callback?: (err: any, response: any) => void): Promise<unknown>;
         alterarValorPlano(callback?: (err: any, response: any) => void): Promise<unknown>;
-        cancelarAdesao(callback?: (err: any, response: any) => void): Promise<unknown>;
+        cancelarAdesao(preApprovalCode: string, callback?: (err: any, response: boolean) => void): Promise<boolean>;
         cobrancaManual(callback?: (err: any, response: any) => void): Promise<unknown>;
         concederDescontoProxCob(callback?: (err: any, response: any) => void): Promise<unknown>;
         getAdesao(callback?: (err: any, response: any) => void): Promise<unknown>;
-        getAdesoes(callback?: (err: any, response: any) => void): Promise<unknown>;
+        getAdesoes(parameters: {
+            preApprovalRequest?: string;
+            maxPageResults?: number;
+            initialDate?: Date | number | string;
+            finalDate?: Date | number | string;
+            senderEmail?: string;
+            status?: string;
+        }, callback?: (err: any, response: any) => void): Promise<IGetPreApprovals>;
         getNotificacoesRecorrencias(callback?: (err: any, response: any) => void): Promise<unknown>;
         /**
          *

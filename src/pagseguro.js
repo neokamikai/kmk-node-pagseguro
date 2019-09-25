@@ -366,7 +366,7 @@ var PagSeguro;
             if (contentType === void 0) { contentType = null; }
             if (accept === void 0) { accept = null; }
             return __awaiter(this, void 0, void 0, function () {
-                var responseHandler, _a;
+                var responseHandler, _a, options;
                 return __generator(this, function (_b) {
                     switch (_b.label) {
                         case 0:
@@ -395,10 +395,10 @@ var PagSeguro;
                                 }
                                 if (err) {
                                     //console.log('[PagSeguro Response] Error:', err);
-                                    return cb(err, body);
+                                    return cb(err, body, response);
                                 }
-                                else if (response.statusCode == 200) {
-                                    return cb(null, body);
+                                else if (response.statusCode == 200 || response.statusCode == 204) {
+                                    return cb(null, body, response);
                                 }
                                 else {
                                     try {
@@ -406,18 +406,18 @@ var PagSeguro;
                                             //console.log('[PagSeguro Response] Response Body:', body);
                                             var json = body;
                                             if (json.errors && json.errors.error) {
-                                                return cb(json.errors.error, json);
+                                                return cb(json.errors.error, json, response);
                                             }
-                                            return cb(json);
+                                            return cb(json, undefined, response);
                                         }
                                         else
-                                            return (cb(response.statusMessage));
+                                            return (cb(response.statusMessage, undefined, response));
                                     }
                                     catch (e) {
                                         try {
                                             var json = JSON.parse(body);
                                             if (json.errors && json.errors.error) {
-                                                return cb(json.errors.error, json);
+                                                return cb(json.errors.error, json, response);
                                             }
                                         }
                                         catch (e) {
@@ -425,7 +425,7 @@ var PagSeguro;
                                             //console.log(body);
                                         }
                                     }
-                                    return cb(body);
+                                    return cb(body, undefined, response);
                                 }
                             };
                             _a = method.toUpperCase();
@@ -444,12 +444,18 @@ var PagSeguro;
                                 url: url, body: body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
                             }, responseHandler)];
                         case 4: return [2 /*return*/, _b.sent()];
-                        case 5: return [4 /*yield*/, request.put({
-                                url: url, body: body, headers: { accept: 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1', 'content-type': contentType }
-                            }, responseHandler)];
+                        case 5:
+                            options = {
+                                url: url, body: body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
+                            };
+                            if (Object.hasOwnProperty.call(options, 'body') && !options.body)
+                                delete options.body;
+                            if (Object.hasOwnProperty.call(options.headers, 'content-type') && !options.headers['content-type'])
+                                delete options.headers['content-type'];
+                            return [4 /*yield*/, request.put(options, responseHandler)];
                         case 6: return [2 /*return*/, _b.sent()];
                         case 7: return [4 /*yield*/, request.delete({
-                                url: url, body: body, headers: { accept: 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1', 'content-type': contentType }
+                                url: url, body: body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
                             }, responseHandler)];
                         case 8: return [2 /*return*/, _b.sent()];
                         case 9: return [2 /*return*/];
@@ -771,7 +777,6 @@ var PagSeguro;
                                                     }
                                                 }
                                             }
-                                            console.log(info.paymentMethod.creditCard.holder);
                                             body = JSON.stringify(info);
                                             return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.aderirPlano.method, url, body, function (err, resp) {
                                                     if (callback) {
@@ -895,7 +900,7 @@ var PagSeguro;
             });
         };
         ;
-        Client.prototype.cancelarAdesao = function (callback) {
+        Client.prototype.cancelarAdesao = function (preApprovalCode, callback) {
             return __awaiter(this, void 0, void 0, function () {
                 var _this = this;
                 return __generator(this, function (_a) {
@@ -905,16 +910,17 @@ var PagSeguro;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
-                                            url = this.urlGen(endPoints.pagamentoRecorrente.cancelarAdesao.url, {});
-                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.cancelarAdesao.method, url, null, function (err, resp) {
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.cancelarAdesao.url, { preApprovalCode: preApprovalCode });
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.cancelarAdesao.method, url, undefined, function (err, resp, response) {
                                                     if (callback)
-                                                        callback(err, resp);
+                                                        callback(err, response.statusCode === 204);
                                                     if (err) {
                                                         if (!callback)
                                                             reject(err);
+                                                        resolve(response.statusCode === 204);
                                                     }
                                                     else {
-                                                        resolve(resp);
+                                                        resolve(response.statusCode === 204);
                                                     }
                                                 })];
                                         case 1: return [2 /*return*/, _a.sent()];
@@ -1019,17 +1025,48 @@ var PagSeguro;
             });
         };
         ;
-        Client.prototype.getAdesoes = function (callback) {
+        Client.prototype.getAdesoes = function (parameters, callback) {
             return __awaiter(this, void 0, void 0, function () {
+                var _a, initialDate, finalDate, maxPageResults, preApprovalRequest, senderEmail, status;
                 var _this = this;
-                return __generator(this, function (_a) {
+                return __generator(this, function (_b) {
+                    _a = parameters || {}, initialDate = _a.initialDate, finalDate = _a.finalDate, maxPageResults = _a.maxPageResults, preApprovalRequest = _a.preApprovalRequest, senderEmail = _a.senderEmail, status = _a.status;
+                    if (typeof initialDate === 'undefined') {
+                        initialDate = new Date();
+                        initialDate.setHours(0);
+                        initialDate.setMinutes(0);
+                        initialDate.setSeconds(0);
+                        initialDate.setMilliseconds(0);
+                    }
+                    else if (typeof initialDate === 'number') {
+                        initialDate = new Date(initialDate);
+                    }
+                    else if (typeof initialDate === 'string') {
+                        initialDate = new Date(Date.parse(initialDate));
+                    }
+                    if (typeof finalDate === 'undefined') {
+                        finalDate = initialDate;
+                    }
+                    else if (typeof finalDate === 'number') {
+                        finalDate = new Date(finalDate);
+                    }
+                    else if (typeof finalDate === 'string') {
+                        finalDate = new Date(Date.parse(finalDate));
+                    }
+                    if (Object.getPrototypeOf(initialDate) !== Date.prototype)
+                        throw new Error("'initialDate' parameter is invalid");
+                    if (Object.getPrototypeOf(finalDate) !== Date.prototype)
+                        throw new Error("'finalDate' parameter is invalid");
+                    initialDate = initialDate.toJSON();
+                    finalDate = finalDate.toJSON();
+                    parameters = JSON.parse(JSON.stringify({ initialDate: initialDate, finalDate: finalDate, maxPageResults: maxPageResults, preApprovalRequest: preApprovalRequest, senderEmail: senderEmail, status: status }));
                     return [2 /*return*/, new Promise(function (resolve, reject) {
                             (function () { return __awaiter(_this, void 0, void 0, function () {
                                 var url;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
-                                            url = this.urlGen(endPoints.pagamentoRecorrente.getAdesoes.url, {});
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.getAdesoes.url, parameters);
                                             return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.getAdesoes.method, url, null, function (err, resp) {
                                                     if (callback)
                                                         callback(err, resp);
@@ -1038,6 +1075,13 @@ var PagSeguro;
                                                             reject(err);
                                                     }
                                                     else {
+                                                        resp.preApprovalList = resp.preApprovalList.map(function (a) {
+                                                            if (typeof a.date === 'string')
+                                                                a.date = new Date(Date.parse(a.date));
+                                                            if (typeof a.lastEventDate === 'string')
+                                                                a.lastEventDate = new Date(Date.parse(a.lastEventDate));
+                                                            return a;
+                                                        });
                                                         resolve(resp);
                                                     }
                                                 })];
@@ -1117,9 +1161,9 @@ var PagSeguro;
                     else if (typeof endCreationDate === 'string') {
                         endCreationDate = new Date(Date.parse(endCreationDate));
                     }
-                    if ((Object.getPrototypeOf(startCreationDate).constructor.name).toLocaleLowerCase() !== 'date')
+                    if (Object.getPrototypeOf(startCreationDate) !== Date.prototype)
                         throw new Error("'startCreationDate' parameter is invalid");
-                    if ((Object.getPrototypeOf(endCreationDate).constructor.name).toLocaleLowerCase() !== 'date')
+                    if (Object.getPrototypeOf(endCreationDate) !== Date.prototype)
                         throw new Error("'endCreationDate' parameter is invalid");
                     startCreationDate = startCreationDate.toJSON();
                     endCreationDate = endCreationDate.toJSON();
