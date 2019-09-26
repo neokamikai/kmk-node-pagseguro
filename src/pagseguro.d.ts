@@ -466,6 +466,7 @@ export declare namespace PagSeguro {
         private paymentUrlGen;
         private urlGen;
         private scriptUrlGen;
+        getScriptUrlForDirectPayment(): string;
         private doRequest;
         sessionId(cb: (err: any, sessionId: string) => any): Promise<any>;
         criarTransacao(checkout: PagSeguroCheckout, callback?: (err: any, response: ICreateTransactionResponse, xmlRequestBody?: string) => void, mode?: PagSeguroCheckoutMode): Promise<ICreateTransactionResponse>;

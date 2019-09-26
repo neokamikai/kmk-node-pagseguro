@@ -362,6 +362,9 @@ var PagSeguro;
         Client.prototype.scriptUrlGen = function (route) {
             return "" + this.scriptBaseUrl + route;
         };
+        Client.prototype.getScriptUrlForDirectPayment = function () {
+            return this.scriptUrlGen('/pagseguro/api/v2/checkout/pagseguro.directpayment.js');
+        };
         Client.prototype.doRequest = function (method, url, body, cb, contentType, accept) {
             if (contentType === void 0) { contentType = null; }
             if (accept === void 0) { accept = null; }

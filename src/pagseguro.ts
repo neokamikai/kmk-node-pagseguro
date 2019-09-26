@@ -599,6 +599,9 @@ export namespace PagSeguro {
 		private scriptUrlGen(route: string) {
 			return `${this.scriptBaseUrl}${route}`;
 		}
+		getScriptUrlForDirectPayment(){
+			return this.scriptUrlGen('/pagseguro/api/v2/checkout/pagseguro.directpayment.js');
+		}
 		private async doRequest(method: string, url: string, body: any, cb: Function, contentType: string = null, accept: string = null) {
 			if (typeof cb === 'undefined') cb = () => { };
 			/**
