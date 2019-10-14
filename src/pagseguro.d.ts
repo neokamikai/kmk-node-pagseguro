@@ -370,6 +370,13 @@ export declare namespace PagSeguro {
         type: PagSeguroPreApprovalPaymentMethodType;
         creditCard: PagSeguroPaymentMethodCreditCard;
     }
+    export class PagSeguroPreApprovalPaymentMethodUpdateSender {
+        ip?: string;
+        hash?: string;
+    }
+    export class PagSeguroPreApprovalPaymentMethodUpdate extends PagSeguroPreApprovalPaymentMethod {
+        sender: PagSeguroPreApprovalPaymentMethodUpdateSender;
+    }
     export class PagSeguroPaymentMethod {
         type: PagSeguroCheckoutPaymentMethodType;
         creditCard: PagSeguroPaymentMethodCreditCard;
@@ -485,7 +492,7 @@ export declare namespace PagSeguro {
          * @param callback
          */
         aderirPlano(info: PagSeguroPreApproval, callback?: (err: any, response: IPreApprovalRequestResponse) => void): Promise<IPreApprovalRequestResponse>;
-        alterarMeioPagtoPlano(callback?: (err: any, response: any) => void): Promise<unknown>;
+        alterarMeioPagtoPlano(preApprovalCode: string, info: PagSeguroPreApprovalPaymentMethodUpdate, callback?: (err: any, response: any) => void): Promise<boolean>;
         alterarStatusAdesao(callback?: (err: any, response: any) => void): Promise<unknown>;
         alterarValorPlano(callback?: (err: any, response: any) => void): Promise<unknown>;
         cancelarAdesao(preApprovalCode: string, callback?: (err: any, response: boolean) => void): Promise<boolean>;

@@ -5,27 +5,72 @@ let client = new PagSeguro.Client(credentials);
 
 let stdin = process.openStdin();
 console.log('App started!');
+console.log('Credentials:', credentials);
 stdin.on('data', e => {
 	let txt = e.toString().trim();
 	if (!txt) return;
 	let cmd = txt.split(/\s/)[0];
 	switch (cmd) {
+		case 'alterar-meio-pagto-adesao':{
+			let codigo = txt.split(/\s/)[1];
+			if(!codigo) return  console.log('Código da adesão não informado');
+			(async () => {
+				console.log('Alterar dados de pagamento adesão:',codigo);
+				let result = await client.alterarMeioPagtoPlano(codigo, {
+					type:'CREDITCARD',
+					sender: {ip:'127.0.0.1'},
+					creditCard:{
+						token:'teste',
+						holder: {
+							name:'TESTE',
+							birthDate:'10/09/1987',
+							documents:[{
+								type:'CPF', value:'11111111111'
+							}],
+							phone:{
+								areaCode:'11',
+								number:'912345678'
+							},
+							billingAddress: {
+								street:'RUA TESTE',
+								number:'TESTE',
+								postalCode:'00000000',
+								complement:'',
+								city:'SAO PAULO',
+								state:'SP',
+								country:'BRA',
+								district: 'TESTE'
+							}
+						}
+					}
+				}, (err, resp)=>{
+					console.log(err, resp);
+				});
+				console.log('Resposta:',result);
+			})().catch(e => {
+				console.log('async catch',e);
+				console.log(e.stack);
+			});
+		}break;
 		case 'cancelar-adesao':{
 			let codigo = txt.split(/\s/)[1];
 			if(!codigo) return  console.log('Código da adesão não informado');
 			(async () => {
 				console.log('Cancelar adesão:',codigo);
-				let result = await client.cancelarAdesao(codigo);
+				let result = await client.cancelarAdesao(codigo, (err, resp)=>{
+					console.log(err, resp);
+				});
 				console.log('Resposta:',result);
 			})().catch(e => {
-				console.log('catch',e);
+				console.log('async catch',e);
+				console.log(e.stack);
 			});
 		}break;
 		case 'get-adesoes': {
 			(async () => {
 				let result = await client.getAdesoes({
-					initialDate:'2019-01-01',
-					finalDate:'2019-09-24'
+					initialDate: '2019-08-01',
+					finalDate: '2019-09-30'
 				});
 				console.log(result);
 			})().catch(e => {

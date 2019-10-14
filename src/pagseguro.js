@@ -1,4 +1,17 @@
 "use strict";
+var __extends = (this && this.__extends) || (function () {
+    var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf ||
+            ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
+            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+        return extendStatics(d, b);
+    };
+    return function (d, b) {
+        extendStatics(d, b);
+        function __() { this.constructor = d; }
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    };
+})();
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -198,6 +211,20 @@ var PagSeguro;
         return PagSeguroPreApprovalPaymentMethod;
     }());
     PagSeguro.PagSeguroPreApprovalPaymentMethod = PagSeguroPreApprovalPaymentMethod;
+    var PagSeguroPreApprovalPaymentMethodUpdateSender = /** @class */ (function () {
+        function PagSeguroPreApprovalPaymentMethodUpdateSender() {
+        }
+        return PagSeguroPreApprovalPaymentMethodUpdateSender;
+    }());
+    PagSeguro.PagSeguroPreApprovalPaymentMethodUpdateSender = PagSeguroPreApprovalPaymentMethodUpdateSender;
+    var PagSeguroPreApprovalPaymentMethodUpdate = /** @class */ (function (_super) {
+        __extends(PagSeguroPreApprovalPaymentMethodUpdate, _super);
+        function PagSeguroPreApprovalPaymentMethodUpdate() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return PagSeguroPreApprovalPaymentMethodUpdate;
+    }(PagSeguroPreApprovalPaymentMethod));
+    PagSeguro.PagSeguroPreApprovalPaymentMethodUpdate = PagSeguroPreApprovalPaymentMethodUpdate;
     var PagSeguroPaymentMethod = /** @class */ (function () {
         function PagSeguroPaymentMethod() {
         }
@@ -363,7 +390,7 @@ var PagSeguro;
             return "" + this.scriptBaseUrl + route;
         };
         Client.prototype.getScriptUrlForDirectPayment = function () {
-            return this.scriptUrlGen('/pagseguro/api/v2/checkout/pagseguro.directpayment.js');
+            return this.scriptUrlGen('/v2/checkout/pagseguro.directpayment.js');
         };
         Client.prototype.doRequest = function (method, url, body, cb, contentType, accept) {
             if (contentType === void 0) { contentType = null; }
@@ -512,11 +539,11 @@ var PagSeguro;
                         checkout.extraAmount = checkout.extraAmount.toFixed(2);
                     if (typeof checkout.shipping.cost === 'number')
                         checkout.shipping.cost = checkout.shipping.cost.toFixed(2);
-                    body = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\" ?>\n<checkout>\n    <sender>\n        <name>" + removeAccents.remove(checkout.sender.name) + "</name>\n        <email>" + checkout.sender.email + "</email>\n        <phone>\n            <areaCode>" + checkout.sender.phone.areaCode + "</areaCode>\n            <number>" + checkout.sender.phone.number + "</number>\n        </phone>\n\t\t<documents>" +
+                    body = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\" standalone=\"yes\" ?>\n<checkout>\n    <sender>\n        <name>" + removeAccents.remove(checkout.sender.name || '') + "</name>\n        <email>" + checkout.sender.email + "</email>\n        <phone>\n            <areaCode>" + checkout.sender.phone.areaCode + "</areaCode>\n            <number>" + checkout.sender.phone.number + "</number>\n        </phone>\n\t\t<documents>" +
                         checkout.sender.documents.map(function (doc) { return "\n\t\t\t<document>\n                <type>" + doc.type + "</type>\n                <value>" + doc.value + "</value>\n            </document>"; }).join('')
                         + "\n        </documents>\n    </sender>\n    <currency>BRL</currency>\n    <items>" +
-                        checkout.items.map(function (item) { return "\n        <item>\n            <id>" + item.id + "</id>\n            <description>" + removeAccents.remove(item.description) + "</description>\n            <amount>" + item.amount + "</amount>\n            <quantity>" + item.quantity + "</quantity>\n            <weight>" + item.weight + "</weight>\n            " + (item.shippingCost ? "<shippingCost>" + item.shippingCost + "</shippingCost>" : '') + "\n        </item>"; }).join('')
-                        + "\n    </items>" + (checkout.redirectURL ? "\n    <redirectURL>" + checkout.redirectURL + "</redirectURL>" : '') + (checkout.notificationURL ? "\n    <notificationURL>" + checkout.notificationURL + "</notificationURL>" : '') + ("\n    <extraAmount>" + checkout.extraAmount + "</extraAmount>\n    <reference>" + checkout.reference + "</reference>\n    <shipping>\n        <address>\n            <street>" + removeAccents.remove(checkout.shipping.address.street) + "</street>\n            <number>" + removeAccents.remove(checkout.shipping.address.number) + "</number>\n            <complement>" + removeAccents.remove(checkout.shipping.address.complement) + "</complement>\n            <district>" + removeAccents.remove(checkout.shipping.address.district) + "</district>\n            <city>" + removeAccents.remove(checkout.shipping.address.city) + "</city>\n            <state>" + removeAccents.remove(checkout.shipping.address.state) + "</state>\n            <country>" + removeAccents.remove(checkout.shipping.address.country) + "</country>\n            <postalCode>" + checkout.shipping.address.postalCode + "</postalCode>\n        </address>\n        <type>" + checkout.shipping.type + "</type>\n        <cost>" + checkout.shipping.cost + "</cost>\n        <addressRequired>" + checkout.shipping.addressRequired + "</addressRequired>\n    </shipping>\n    <timeout>" + checkout.timeout + "</timeout>\n    <maxAge>" + checkout.maxAge + "</maxAge>\n    <maxUses>" + checkout.maxUses + "</maxUses>") + (checkout.receiver ? "\n    <receiver>\n        <email>" + checkout.receiver.email + "</email>\n    </receiver>" : '') + ("\n    <enableRecovery>" + (checkout.enableRecovery || false) + "</enableRecovery>") + (checkout.acceptedPaymentMethods && checkout.acceptedPaymentMethods.exclude ? "\n\t<acceptedPaymentMethods>" + (checkout.acceptedPaymentMethods.exclude ? "\n\t\t<exclude>" + (checkout.acceptedPaymentMethods.exclude.map(function (pm) { return "\n\t\t\t<paymentMethod>\n\t\t\t\t<group>" + pm.group + "</group>\n\t\t\t</paymentMethod>"; }).join('')) + "\n\t\t</exclude>" : '') + "\n\t</acceptedPaymentMethods>" : '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ? "\n    <paymentMethodConfigs>" + (checkout.paymentMethodConfigs.map(function (pmc) { return "\n        <paymentMethodConfig>\n            <paymentMethod>\n                <group>" + pmc.paymentMethod.group + "</group>\n            </paymentMethod>\n            <configs>" + (pmc.configs.map(function (pmce) { return "\n                <config>\n                    <key>" + pmce.key + "</key>\n                    <value>" + pmce.value + "</value>\n                </config>"; }).join('')) + "\n            </configs>\n        </paymentMethodConfig>"; }).join('')) + "\n    </paymentMethodConfigs>" : '') + "\n</checkout>";
+                        checkout.items.map(function (item) { return "\n        <item>\n            <id>" + item.id + "</id>\n            <description>" + removeAccents.remove(item.description || '') + "</description>\n            <amount>" + item.amount + "</amount>\n            <quantity>" + item.quantity + "</quantity>\n            <weight>" + item.weight + "</weight>\n            " + (item.shippingCost ? "<shippingCost>" + item.shippingCost + "</shippingCost>" : '') + "\n        </item>"; }).join('')
+                        + "\n    </items>" + (checkout.redirectURL ? "\n    <redirectURL>" + checkout.redirectURL + "</redirectURL>" : '') + (checkout.notificationURL ? "\n    <notificationURL>" + checkout.notificationURL + "</notificationURL>" : '') + ("\n    <extraAmount>" + checkout.extraAmount + "</extraAmount>\n    <reference>" + checkout.reference + "</reference>\n    <shipping>\n        <address>\n            <street>" + removeAccents.remove(checkout.shipping.address.street || '') + "</street>\n            <number>" + removeAccents.remove(checkout.shipping.address.number || '') + "</number>\n            <complement>" + removeAccents.remove(checkout.shipping.address.complement || '') + "</complement>\n            <district>" + removeAccents.remove(checkout.shipping.address.district || '') + "</district>\n            <city>" + removeAccents.remove(checkout.shipping.address.city || '') + "</city>\n            <state>" + removeAccents.remove(checkout.shipping.address.state || '') + "</state>\n            <country>" + removeAccents.remove(checkout.shipping.address.country || '') + "</country>\n            <postalCode>" + checkout.shipping.address.postalCode + "</postalCode>\n        </address>\n        <type>" + checkout.shipping.type + "</type>\n        <cost>" + checkout.shipping.cost + "</cost>\n        <addressRequired>" + checkout.shipping.addressRequired + "</addressRequired>\n    </shipping>\n    <timeout>" + checkout.timeout + "</timeout>\n    <maxAge>" + checkout.maxAge + "</maxAge>\n    <maxUses>" + checkout.maxUses + "</maxUses>") + (checkout.receiver ? "\n    <receiver>\n        <email>" + checkout.receiver.email + "</email>\n    </receiver>" : '') + ("\n    <enableRecovery>" + (checkout.enableRecovery || false) + "</enableRecovery>") + (checkout.acceptedPaymentMethods && checkout.acceptedPaymentMethods.exclude ? "\n\t<acceptedPaymentMethods>" + (checkout.acceptedPaymentMethods.exclude ? "\n\t\t<exclude>" + (checkout.acceptedPaymentMethods.exclude.map(function (pm) { return "\n\t\t\t<paymentMethod>\n\t\t\t\t<group>" + pm.group + "</group>\n\t\t\t</paymentMethod>"; }).join('')) + "\n\t\t</exclude>" : '') + "\n\t</acceptedPaymentMethods>" : '') + (checkout.paymentMethodConfigs && checkout.paymentMethodConfigs.length > 0 ? "\n    <paymentMethodConfigs>" + (checkout.paymentMethodConfigs.map(function (pmc) { return "\n        <paymentMethodConfig>\n            <paymentMethod>\n                <group>" + pmc.paymentMethod.group + "</group>\n            </paymentMethod>\n            <configs>" + (pmc.configs.map(function (pmce) { return "\n                <config>\n                    <key>" + pmce.key + "</key>\n                    <value>" + pmce.value + "</value>\n                </config>"; }).join('')) + "\n            </configs>\n        </paymentMethodConfig>"; }).join('')) + "\n    </paymentMethodConfigs>" : '') + "\n</checkout>";
                     return [2 /*return*/, new Promise(function (resolve, reject) {
                             _this.doRequest(endPoints.pagamentoAvulso.criarTransacao.method, url, body, function (err, resp) {
                                 if (err) {
@@ -810,28 +837,58 @@ var PagSeguro;
             });
         };
         ;
-        Client.prototype.alterarMeioPagtoPlano = function (callback) {
+        Client.prototype.alterarMeioPagtoPlano = function (preApprovalCode, info, callback) {
             return __awaiter(this, void 0, void 0, function () {
+                var birthDate, d, d, body;
                 var _this = this;
                 return __generator(this, function (_a) {
+                    if (info) {
+                        if (info.creditCard) {
+                            if (info.creditCard.holder) {
+                                if (info.creditCard.holder.birthDate) {
+                                    if (!info.creditCard.holder.birthDate) {
+                                        if (info.creditCard.holder.birthDate !== null)
+                                            info.creditCard.holder.birthDate = null;
+                                    }
+                                    else if (typeof info.creditCard.holder.birthDate === 'string') {
+                                        birthDate = info.creditCard.holder.birthDate;
+                                        if (birthDate.match(/^\d\d\d\d\-\d\d\-\d\d$/)) {
+                                            d = (new Date(Date.parse(birthDate + 'T00:00:00.000-03:00')));
+                                            info.creditCard.holder.birthDate = d.getDate().toString().padStart(2, '0') + "/" + (1 + d.getMonth()).toString().padStart(2, '0') + "/" + d.getFullYear();
+                                        }
+                                    }
+                                    else if (typeof info.creditCard.holder.birthDate === 'object' && Object.getPrototypeOf(info.creditCard.holder.birthDate) == Date.prototype) {
+                                        d = info.creditCard.holder.birthDate;
+                                        info.creditCard.holder.birthDate = d.getDate().toString().padStart(2, '0') + "/" + (1 + d.getMonth()).toString().padStart(2, '0') + "/" + d.getFullYear();
+                                    }
+                                }
+                                if (info.creditCard.holder.billingAddress) {
+                                    if (!info.creditCard.holder.billingAddress.country)
+                                        info.creditCard.holder.billingAddress.country = 'BRA';
+                                }
+                            }
+                        }
+                    }
+                    body = JSON.stringify(info);
                     return [2 /*return*/, new Promise(function (resolve, reject) {
                             (function () { return __awaiter(_this, void 0, void 0, function () {
                                 var url;
                                 return __generator(this, function (_a) {
                                     switch (_a.label) {
                                         case 0:
-                                            url = this.urlGen(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.url, {});
-                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.method, url, null, function (err, resp) {
+                                            url = this.urlGen(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.url, { preApprovalCode: preApprovalCode });
+                                            return [4 /*yield*/, this.doRequest(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.method, url, body, function (err, resp, response) {
                                                     if (callback)
-                                                        callback(err, resp);
+                                                        callback(err, response.statusCode === 204);
                                                     if (err) {
                                                         if (!callback)
                                                             reject(err);
+                                                        resolve(response.statusCode === 204);
                                                     }
                                                     else {
-                                                        resolve(resp);
+                                                        resolve(response.statusCode === 204);
                                                     }
-                                                })];
+                                                }, 'application/json')];
                                         case 1: return [2 /*return*/, _a.sent()];
                                     }
                                 });
@@ -1078,13 +1135,17 @@ var PagSeguro;
                                                             reject(err);
                                                     }
                                                     else {
-                                                        resp.preApprovalList = resp.preApprovalList.map(function (a) {
-                                                            if (typeof a.date === 'string')
-                                                                a.date = new Date(Date.parse(a.date));
-                                                            if (typeof a.lastEventDate === 'string')
-                                                                a.lastEventDate = new Date(Date.parse(a.lastEventDate));
-                                                            return a;
-                                                        });
+                                                        if (resp.preApprovalList && Array.isArray(resp.preApprovalList))
+                                                            resp.preApprovalList = resp.preApprovalList.map(function (a) {
+                                                                if (typeof a.date === 'string')
+                                                                    a.date = new Date(Date.parse(a.date));
+                                                                if (typeof a.lastEventDate === 'string')
+                                                                    a.lastEventDate = new Date(Date.parse(a.lastEventDate));
+                                                                return a;
+                                                            });
+                                                        if (resp.date) {
+                                                            resp.date = new Date(Date.parse(resp.date));
+                                                        }
                                                         resolve(resp);
                                                     }
                                                 })];

@@ -183,7 +183,6 @@ export namespace PagSeguro {
 
 
 	}
-
 	export class PagSeguroHolder {
 		name: string;
 		email: string;
@@ -439,6 +438,14 @@ export namespace PagSeguro {
 		type: PagSeguroPreApprovalPaymentMethodType;
 		creditCard: PagSeguroPaymentMethodCreditCard;
 	}
+
+	export class PagSeguroPreApprovalPaymentMethodUpdateSender {
+		ip?: string;
+		hash?: string;
+	}
+	export class PagSeguroPreApprovalPaymentMethodUpdate extends PagSeguroPreApprovalPaymentMethod {
+		sender: PagSeguroPreApprovalPaymentMethodUpdateSender;
+	}
 	export class PagSeguroPaymentMethod {
 		type: PagSeguroCheckoutPaymentMethodType;
 		creditCard: PagSeguroPaymentMethodCreditCard;
@@ -599,8 +606,8 @@ export namespace PagSeguro {
 		private scriptUrlGen(route: string) {
 			return `${this.scriptBaseUrl}${route}`;
 		}
-		getScriptUrlForDirectPayment(){
-			return this.scriptUrlGen('/pagseguro/api/v2/checkout/pagseguro.directpayment.js');
+		getScriptUrlForDirectPayment() {
+			return this.scriptUrlGen('/v2/checkout/pagseguro.directpayment.js');
 		}
 		private async doRequest(method: string, url: string, body: any, cb: Function, contentType: string = null, accept: string = null) {
 			if (typeof cb === 'undefined') cb = () => { };
@@ -679,8 +686,8 @@ export namespace PagSeguro {
 						let options = {
 							url, body, headers: { accept: accept === null ? 'application/vnd.pagseguro.com.br.v3+json;charset=ISO-8859-1' : accept, 'content-type': contentType }
 						};
-						if(Object.hasOwnProperty.call(options,'body') && !options.body) delete options.body;
-						if(Object.hasOwnProperty.call(options.headers,'content-type') && !options.headers['content-type']) delete options.headers['content-type'];
+						if (Object.hasOwnProperty.call(options, 'body') && !options.body) delete options.body;
+						if (Object.hasOwnProperty.call(options.headers, 'content-type') && !options.headers['content-type']) delete options.headers['content-type'];
 						return await request.put(options, responseHandler);
 					}
 				case 'DELETE':
@@ -719,7 +726,7 @@ export namespace PagSeguro {
 			let body = `<?xml version="1.0" encoding="ISO-8859-1" standalone="yes" ?>
 <checkout>
     <sender>
-        <name>${removeAccents.remove(checkout.sender.name)}</name>
+        <name>${removeAccents.remove(checkout.sender.name||'')}</name>
         <email>${checkout.sender.email}</email>
         <phone>
             <areaCode>${checkout.sender.phone.areaCode}</areaCode>
@@ -739,7 +746,7 @@ export namespace PagSeguro {
 				checkout.items.map(item => `
         <item>
             <id>${item.id}</id>
-            <description>${removeAccents.remove(item.description)}</description>
+            <description>${removeAccents.remove(item.description||'')}</description>
             <amount>${item.amount}</amount>
             <quantity>${item.quantity}</quantity>
             <weight>${item.weight}</weight>
@@ -753,13 +760,13 @@ export namespace PagSeguro {
     <reference>${checkout.reference}</reference>
     <shipping>
         <address>
-            <street>${removeAccents.remove(checkout.shipping.address.street)}</street>
-            <number>${removeAccents.remove(checkout.shipping.address.number)}</number>
-            <complement>${removeAccents.remove(checkout.shipping.address.complement)}</complement>
-            <district>${removeAccents.remove(checkout.shipping.address.district)}</district>
-            <city>${removeAccents.remove(checkout.shipping.address.city)}</city>
-            <state>${removeAccents.remove(checkout.shipping.address.state)}</state>
-            <country>${removeAccents.remove(checkout.shipping.address.country)}</country>
+            <street>${removeAccents.remove(checkout.shipping.address.street||'')}</street>
+            <number>${removeAccents.remove(checkout.shipping.address.number||'')}</number>
+            <complement>${removeAccents.remove(checkout.shipping.address.complement||'')}</complement>
+            <district>${removeAccents.remove(checkout.shipping.address.district||'')}</district>
+            <city>${removeAccents.remove(checkout.shipping.address.city||'')}</city>
+            <state>${removeAccents.remove(checkout.shipping.address.state||'')}</state>
+            <country>${removeAccents.remove(checkout.shipping.address.country||'')}</country>
             <postalCode>${checkout.shipping.address.postalCode}</postalCode>
         </address>
         <type>${checkout.shipping.type}</type>
@@ -979,19 +986,47 @@ export namespace PagSeguro {
 			});
 		};
 
-		async alterarMeioPagtoPlano(callback?: (err, response) => void) {
-			return new Promise((resolve, reject) => {
+		async alterarMeioPagtoPlano(preApprovalCode: string, info: PagSeguroPreApprovalPaymentMethodUpdate, callback?: (err, response) => void) {
+			if (info) {
+				if (info.creditCard) {
+					if (info.creditCard.holder) {
+						if (info.creditCard.holder.birthDate) {
+							if (!info.creditCard.holder.birthDate) {
+								if (info.creditCard.holder.birthDate !== null) info.creditCard.holder.birthDate = null;
+							}
+							else if (typeof info.creditCard.holder.birthDate === 'string') {
+								let birthDate = info.creditCard.holder.birthDate;
+								if (birthDate.match(/^\d\d\d\d\-\d\d\-\d\d$/)) {
+									let d = (new Date(Date.parse(birthDate + 'T00:00:00.000-03:00')));
+									info.creditCard.holder.birthDate = `${d.getDate().toString().padStart(2, '0')}/${(1 + d.getMonth()).toString().padStart(2, '0')}/${d.getFullYear()}`;
+								}
+							}
+							else if (typeof info.creditCard.holder.birthDate === 'object' && Object.getPrototypeOf(info.creditCard.holder.birthDate) == Date.prototype) {
+								let d = info.creditCard.holder.birthDate;
+								info.creditCard.holder.birthDate = `${d.getDate().toString().padStart(2, '0')}/${(1 + d.getMonth()).toString().padStart(2, '0')}/${d.getFullYear()}`;
+							}
+						}
+						if (info.creditCard.holder.billingAddress) {
+							if (!info.creditCard.holder.billingAddress.country) info.creditCard.holder.billingAddress.country = 'BRA';
+						}
+					}
+				}
+			}
+			let body = JSON.stringify(info);
+			return new Promise<boolean>((resolve, reject) => {
 				(async () => {
-					const url = this.urlGen(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.url, {});
-					return await this.doRequest(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.method, url, null, (err, resp) => {
-						if (callback) callback(err, resp);
-						if (err) {
-							if (!callback) reject(err);
-						}
-						else {
-							resolve(resp);
-						}
-					});
+					const url = this.urlGen(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.url, { preApprovalCode });
+					return await this.doRequest(endPoints.pagamentoRecorrente.alterarMeioPagtoPlano.method, url, body,
+						(err, resp: boolean, response) => {
+							if (callback) callback(err, response.statusCode === 204);
+							if (err) {
+								if (!callback) reject(err);
+								resolve(response.statusCode === 204);
+							}
+							else {
+								resolve(response.statusCode === 204);
+							}
+						}, 'application/json');
 				})();
 			});
 		};
@@ -1139,11 +1174,15 @@ export namespace PagSeguro {
 								if (!callback) reject(err);
 							}
 							else {
-								resp.preApprovalList = resp.preApprovalList.map(a => {
-									if (typeof a.date === 'string') a.date = new Date(Date.parse(a.date));
-									if (typeof a.lastEventDate === 'string') a.lastEventDate = new Date(Date.parse(a.lastEventDate));
-									return a;
-								})
+								if (resp.preApprovalList && Array.isArray(resp.preApprovalList))
+									resp.preApprovalList = resp.preApprovalList.map(a => {
+										if (typeof a.date === 'string') a.date = new Date(Date.parse(a.date));
+										if (typeof a.lastEventDate === 'string') a.lastEventDate = new Date(Date.parse(a.lastEventDate));
+										return a;
+									});
+								if (resp.date) {
+									resp.date = new Date(Date.parse(resp.date as any));
+								}
 								resolve(resp);
 							}
 						});
